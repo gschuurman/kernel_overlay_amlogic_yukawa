@@ -1,0 +1,284 @@
+# SPDX-License-Identifier: GPL-2.0
+
+load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
+load(
+    "//build/kernel/kleaf:kernel.bzl",
+    "kernel_abi",
+    "kernel_abi_dist",
+    "kernel_build",
+    "kernel_images",
+    "kernel_module",
+    "kernel_module_group",
+    "kernel_modules_install",
+    "merged_kernel_uapi_headers",
+)
+load("@kernel_toolchain_info//:dict.bzl", "CLANG_VERSION")
+load("//common:modules.bzl", "get_gki_modules_list")
+
+
+kernel_abi(
+    name = "amlogic_abi",
+    kernel_build = ":yukawa",
+    kernel_modules = [":yukawa_device"],
+    kmi_symbol_list_add_only = True,
+    module_grouping = False,
+)
+
+
+_AMLOGIC_MODULE_OUTS = [
+    "drivers/char/hw_random/meson-rng.ko",
+    "drivers/clk/clk-pwm.ko",                                                                                                                                                                 
+    "drivers/clk/meson/axg-aoclk.ko",
+    "drivers/clk/meson/axg-audio.ko",
+    "drivers/clk/meson/axg.ko",
+    "drivers/clk/meson/clk-cpu-dyndiv.ko",
+    "drivers/clk/meson/clk-dualdiv.ko",
+    "drivers/clk/meson/clk-mpll.ko",
+    "drivers/clk/meson/clk-phase.ko",
+    "drivers/clk/meson/clk-pll.ko",
+    "drivers/clk/meson/clk-regmap.ko",
+    "drivers/clk/meson/g12a-aoclk.ko",
+    "drivers/clk/meson/g12a.ko",
+    "drivers/clk/meson/gxbb-aoclk.ko",
+    "drivers/clk/meson/gxbb.ko",
+    "drivers/clk/meson/meson-aoclk.ko",                                                                                                                                                       
+    "drivers/clk/meson/meson-eeclk.ko",
+    "drivers/clk/meson/sclk-div.ko",
+    "drivers/clk/meson/vid-pll-div.ko",
+    "drivers/crypto/amlogic/amlogic-gxl-crypto.ko",                                                                                                                                           
+    "drivers/dma-buf/heaps/cma_heap.ko",
+    "drivers/dma-buf/heaps/system_heap.ko",
+    "drivers/firmware/meson/meson_sm.ko",                                                                                                                                                     
+    "drivers/gpu/drm/bridge/display-connector.ko",
+    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko",                                                                                                                                   
+    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-cec.ko",
+    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.ko",
+    "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",                                                                                                                                             
+    "drivers/gpu/drm/display/drm_display_helper.ko",
+    "drivers/gpu/drm/drm_dma_helper.ko",                                                                                                                                                      
+    "drivers/gpu/drm/meson/meson_dw_hdmi.ko",
+    "drivers/gpu/drm/meson/meson-drm.ko",
+    "drivers/i2c/busses/i2c-meson.ko",                                                                                                                                                        
+    "drivers/iio/adc/meson_saradc.ko",
+    "drivers/irqchip/irq-meson-gpio.ko",
+    "drivers/leds/leds-gpio.ko",
+    "drivers/media/cec/platform/meson/ao-cec-g12a.ko",                                                                                                                                        
+    "drivers/media/cec/platform/meson/ao-cec.ko",                                                                                                                                             
+    "drivers/media/platform/amlogic/meson-ge2d/ge2d.ko",                                                                                                                                      
+    "drivers/media/rc/meson-ir.ko",                                                                                                                                                           
+    "drivers/mfd/khadas-mcu.ko",
+    "drivers/mmc/core/pwrseq_emmc.ko",
+    "drivers/mmc/core/pwrseq_simple.ko",
+    "drivers/mmc/host/meson-gx-mmc.ko",                                                                                                                                                       
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-generic.ko",                                                                                                                                   
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.ko",                                                                                                                                   
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-meson.ko",                                                                                                                                     
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.ko",                                                                                                                                   
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-qcom-ethqos.ko",
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko",
+    "drivers/net/ethernet/stmicro/stmmac/dwmac-sunxi.ko",                                                                                                                                     
+    "drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko",
+    "drivers/net/ethernet/stmicro/stmmac/stmmac.ko",   
+    "drivers/net/mdio/mdio-mux-meson-g12a.ko",
+    "drivers/net/mdio/mdio-mux.ko",
+    "drivers/net/pcs/pcs_xpcs.ko",                                                                                                                                                            
+    "drivers/net/phy/meson-gxl.ko",                                                                                                                                                           
+    "drivers/net/phy/realtek.ko",                                                                                                                                                             
+    "drivers/pci/controller/dwc/pci-meson.ko",                                                                                                                                                
+    "drivers/phy/amlogic/phy-meson-axg-mipi-pcie-analog.ko",
+    "drivers/phy/amlogic/phy-meson-axg-pcie.ko",
+    "drivers/phy/amlogic/phy-meson-g12a-usb2.ko",
+    "drivers/phy/amlogic/phy-meson-g12a-usb3-pcie.ko",                                                                                                                                        
+    "drivers/phy/amlogic/phy-meson-gxl-usb2.ko",
+    "drivers/phy/amlogic/phy-meson8b-usb2.ko",                                                                                                                                                
+    "drivers/pinctrl/meson/pinctrl-meson-a1.ko",                                                                                                                                              
+    "drivers/pinctrl/meson/pinctrl-meson-axg-pmx.ko",                                                                                                                                         
+    "drivers/pinctrl/meson/pinctrl-meson-axg.ko",                                                                                                                                             
+    "drivers/pinctrl/meson/pinctrl-meson-g12a.ko",                                                                                                                                            
+    "drivers/pinctrl/meson/pinctrl-meson-gxbb.ko",                                                                                                                                            
+    "drivers/pinctrl/meson/pinctrl-meson-gxl.ko",                                                                                                                                             
+    "drivers/pinctrl/meson/pinctrl-meson-s4.ko",
+    "drivers/pinctrl/meson/pinctrl-meson.ko",
+    "drivers/pinctrl/meson/pinctrl-meson8-pmx.ko",                                                                                                                                            
+    "drivers/pwm/pwm-meson.ko",
+    "drivers/regulator/pwm-regulator.ko",                                                                                                                                                     
+    "drivers/reset/reset-meson-audio-arb.ko",
+    "drivers/reset/reset-meson.ko",
+    "drivers/rtc/rtc-meson-vrtc.ko",
+    "drivers/soc/amlogic/meson-canvas.ko",
+    "drivers/soc/amlogic/meson-clk-measure.ko",                                                                                                                                               
+    "drivers/soc/amlogic/meson-ee-pwrc.ko",
+    "drivers/soc/amlogic/meson-gx-pwrc-vpu.ko",                                                                                                                                               
+    "drivers/soc/amlogic/meson-secure-pwrc.ko",                                                                                                                                               
+    "drivers/spi/spi-meson-spicc.ko",                                                                                                                                                         
+    "drivers/spi/spi-meson-spifc.ko",                                                                                                                                                         
+    "drivers/thermal/amlogic_thermal.ko",                                                                                                                                                     
+    "drivers/thermal/khadas_mcu_fan.ko",
+    "drivers/usb/dwc2/dwc2.ko",                                                                                                                                                               
+    "drivers/usb/dwc3/dwc3-meson-g12a.ko",
+    "drivers/watchdog/meson_gxbb_wdt.ko",
+    "drivers/watchdog/meson_wdt.ko",
+    "sound/soc/codecs/snd-soc-dmic.ko",
+    "sound/soc/codecs/snd-soc-hdmi-codec.ko",
+    "sound/soc/codecs/snd-soc-spdif-rx.ko",                                                                                                                                                   
+    "sound/soc/codecs/snd-soc-spdif-tx.ko",
+    "sound/soc/meson/snd-soc-meson-aiu.ko",
+    "sound/soc/meson/snd-soc-meson-axg-fifo.ko",                                                                                                                                              
+    "sound/soc/meson/snd-soc-meson-axg-frddr.ko",                                                                                                                                             
+    "sound/soc/meson/snd-soc-meson-axg-pdm.ko",                                                                                                                                               
+    "sound/soc/meson/snd-soc-meson-axg-sound-card.ko",                                                                                                                                        
+    "sound/soc/meson/snd-soc-meson-axg-spdifin.ko",                                                                                                                                           
+    "sound/soc/meson/snd-soc-meson-axg-spdifout.ko",
+    "sound/soc/meson/snd-soc-meson-axg-tdm-formatter.ko",
+    "sound/soc/meson/snd-soc-meson-axg-tdm-interface.ko",                                                                                                                                     
+    "sound/soc/meson/snd-soc-meson-axg-tdmin.ko",
+    "sound/soc/meson/snd-soc-meson-axg-tdmout.ko",
+    "sound/soc/meson/snd-soc-meson-axg-toddr.ko",                                                                                                                                             
+    "sound/soc/meson/snd-soc-meson-card-utils.ko",
+    "sound/soc/meson/snd-soc-meson-codec-glue.ko",
+    "sound/soc/meson/snd-soc-meson-g12a-toacodec.ko",
+    "sound/soc/meson/snd-soc-meson-g12a-tohdmitx.ko",
+    "sound/soc/meson/snd-soc-meson-gx-sound-card.ko",
+    "sound/soc/meson/snd-soc-meson-t9015.ko",
+    "net/mac80211/mac80211.ko",
+    "drivers/bcma/bcma.ko",
+    "drivers/ssb/ssb.ko",
+    "drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko",
+    "net/wireless/cfg80211.ko",
+    "lib/math/cordic.ko",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
+    "drivers/net/wireless/broadcom/b43/b43.ko",
+]
+
+kernel_build(
+    name = "yukawa",
+    srcs = glob([
+        "**/Kconfig",
+        "build.config.*",
+    ]) + [
+        # keep sorted
+        "Kconfig.ext",
+        "//common:kernel_aarch64_sources",
+    ],
+    make_goals = [
+        "Image",
+        "modules",
+        "dtbs",
+        "all",
+    ],
+    build_config = "//common:build.config.amlogic",
+    collect_unstripped_modules = True,
+    kconfig_ext = "Kconfig.ext",
+    kmi_symbol_list = "//common:android/abi_gki_aarch64_amlogic",
+    additional_kmi_symbol_lists=["//common:aarch64_additional_kmi_symbol_lists"],
+    protected_exports_list="//common:android/abi_gki_protected_exports_aarch64",
+    protected_modules_list="//common:android/gki_aarch64_protected_modules",
+    kmi_symbol_list_strict_mode = True,
+    module_outs = get_gki_modules_list("arm64") + _AMLOGIC_MODULE_OUTS,
+    outs = [
+        "Image",
+        "System.map",
+        "modules.builtin",
+        "modules.builtin.modinfo",
+        "arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3-android.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-sm1-khadas-vim3l.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-sm1-khadas-vim3l-android.dtb",
+        "vmlinux",
+        "vmlinux.symvers",
+    ],
+    strip_modules = True,
+    # Keep in sync with build.config.common
+    toolchain_version = CLANG_VERSION,
+)
+
+kernel_module(
+    name = "yukawa_device",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            ".*",
+            ".*/**",
+            "BUILD.bazel",
+            "**/*.bzl",
+            "build.config.*",
+        ],
+    ),
+    outs = [
+        "drivers/gpu/arm/midgard/mali_kbase.ko",
+    ],
+    kernel_build = ":yukawa",
+)
+
+kernel_modules_install(
+    name = "yukawa_modules_install",
+    kernel_build = ":yukawa",
+    kernel_modules = [":yukawa_device"],
+)
+
+merged_kernel_uapi_headers(
+    name = "yukawa_merged_kernel_uapi_headers",
+    kernel_build = ":yukawa",
+    kernel_modules = [":yukawa_device"],
+)
+#
+# NOTE: Using Image.lz4 in make_goals does not work because
+#   kernel build passes legacy option (-l) to lz4 command
+#   and u-boot fails to decompress.  Instead, add custom
+#   command to lz4 compress same options as kernel, but
+#   without the -l.
+#
+genrule(
+    name = "yukawa_compressed_image",
+    srcs = [":yukawa/Image"],
+    outs = ["Image.lz4"],
+    cmd = """
+        $(location //build/kernel:hermetic-tools/lz4) -f -12 --favor-decSpeed $(location :yukawa/Image) $@
+    """,
+    tools = [
+        "//build/kernel:hermetic-tools/lz4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+kernel_images(
+    name = "yukawa_images",
+    build_boot = False,
+    build_dtbo = True,
+    build_initramfs = True,
+    dtbo_srcs = [
+	    ":yukawa/meson-sm1-khadas-vim3l-android.dtb",
+	    ":yukawa/meson-g12b-a311d-khadas-vim3-android.dtb",
+    ],
+    kernel_build = ":yukawa",
+    kernel_modules_install = ":yukawa_modules_install",
+)
+
+copy_to_dist_dir(
+    name = "yukawa_dist",
+    data = [
+        ":yukawa",
+        ":yukawa_images",
+        ":yukawa_modules_install",
+        ":yukawa_merged_kernel_uapi_headers",
+        ":yukawa_compressed_image",
+    ],
+    dist_dir = "out/yukawa/dist",
+    flat = True,
+    log = "info",
+)
+
+kernel_abi_dist(
+    name = "yukawa_abi_dist",
+    kernel_abi = ":yukawa_abi",
+    dist_dir = "out/yukawa/dist",
+    data = [
+        ":yukawa",
+        ":yukawa_images",
+        ":yukawa_modules_install",
+        ":yukawa_merged_kernel_uapi_headers",
+    ],
+    flat = True,
+    log = "info",
+)
