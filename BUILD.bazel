@@ -26,6 +26,8 @@ kernel_abi(
 
 
 _AMLOGIC_MODULE_OUTS = [
+    # keep sorted
+    "drivers/bcma/bcma.ko",
     "drivers/char/hw_random/meson-rng.ko",
     "drivers/clk/clk-pwm.ko",
     "drivers/clk/meson/axg-aoclk.ko",
@@ -56,8 +58,8 @@ _AMLOGIC_MODULE_OUTS = [
     "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",
     "drivers/gpu/drm/display/drm_display_helper.ko",
     "drivers/gpu/drm/drm_dma_helper.ko",
-    "drivers/gpu/drm/meson/meson_dw_hdmi.ko",
     "drivers/gpu/drm/meson/meson-drm.ko",
+    "drivers/gpu/drm/meson/meson_dw_hdmi.ko",
     "drivers/i2c/busses/i2c-meson.ko",
     "drivers/iio/adc/meson_saradc.ko",
     "drivers/irqchip/irq-meson-gpio.ko",
@@ -84,6 +86,9 @@ _AMLOGIC_MODULE_OUTS = [
     "drivers/net/pcs/pcs_xpcs.ko",
     "drivers/net/phy/meson-gxl.ko",
     "drivers/net/phy/realtek.ko",
+    "drivers/net/wireless/broadcom/b43/b43.ko",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
+    "drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko",
     "drivers/pci/controller/dwc/pci-meson.ko",
     "drivers/phy/amlogic/phy-meson-axg-mipi-pcie-analog.ko",
     "drivers/phy/amlogic/phy-meson-axg-pcie.ko",
@@ -112,12 +117,16 @@ _AMLOGIC_MODULE_OUTS = [
     "drivers/soc/amlogic/meson-secure-pwrc.ko",
     "drivers/spi/spi-meson-spicc.ko",
     "drivers/spi/spi-meson-spifc.ko",
+    "drivers/ssb/ssb.ko",
     "drivers/thermal/amlogic_thermal.ko",
     "drivers/thermal/khadas_mcu_fan.ko",
     "drivers/usb/dwc2/dwc2.ko",
     "drivers/usb/dwc3/dwc3-meson-g12a.ko",
     "drivers/watchdog/meson_gxbb_wdt.ko",
     "drivers/watchdog/meson_wdt.ko",
+    "lib/math/cordic.ko",
+    "net/mac80211/mac80211.ko",
+    "net/wireless/cfg80211.ko",
     "sound/soc/codecs/snd-soc-dmic.ko",
     "sound/soc/codecs/snd-soc-hdmi-codec.ko",
     "sound/soc/codecs/snd-soc-spdif-rx.ko",
@@ -140,14 +149,6 @@ _AMLOGIC_MODULE_OUTS = [
     "sound/soc/meson/snd-soc-meson-g12a-tohdmitx.ko",
     "sound/soc/meson/snd-soc-meson-gx-sound-card.ko",
     "sound/soc/meson/snd-soc-meson-t9015.ko",
-    "net/mac80211/mac80211.ko",
-    "drivers/bcma/bcma.ko",
-    "drivers/ssb/ssb.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko",
-    "net/wireless/cfg80211.ko",
-    "lib/math/cordic.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
-    "drivers/net/wireless/broadcom/b43/b43.ko",
 ]
 
 kernel_build(
