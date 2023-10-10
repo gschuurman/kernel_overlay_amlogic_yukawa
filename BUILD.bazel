@@ -120,6 +120,7 @@ _AMLOGIC_MODULE_OUTS = [
     "drivers/ssb/ssb.ko",
     "drivers/thermal/amlogic_thermal.ko",
     "drivers/thermal/khadas_mcu_fan.ko",
+    "drivers/tty/serial/meson_uart.ko",
     "drivers/usb/dwc2/dwc2.ko",
     "drivers/usb/dwc3/dwc3-meson-g12a.ko",
     "drivers/watchdog/meson_gxbb_wdt.ko",
