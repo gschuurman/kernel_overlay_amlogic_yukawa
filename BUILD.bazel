@@ -60,6 +60,8 @@ _AMLOGIC_MODULE_OUTS = [
     "drivers/gpu/drm/drm_dma_helper.ko",
     "drivers/gpu/drm/meson/meson-drm.ko",
     "drivers/gpu/drm/meson/meson_dw_hdmi.ko",
+    "drivers/gpu/drm/panfrost/panfrost.ko",
+    "drivers/gpu/drm/scheduler/gpu-sched.ko",
     "drivers/i2c/busses/i2c-meson.ko",
     "drivers/iio/adc/meson_saradc.ko",
     "drivers/irqchip/irq-meson-gpio.ko",
