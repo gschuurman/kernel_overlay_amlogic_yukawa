@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""Utility files for storing constants for TI kernel builds."""
+
+KERNEL_DIR = "common"
+DEST_DIR = "android16-mainline"
+
