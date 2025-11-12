@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0
+load("//build/kernel/kleaf:kernel.bzl", "kernel_dtstree")
+
+kernel_dtstree(
+    name = "dtbo_amlogic",
+    srcs = glob(
+        [
+            "amlogic/**/*.dts",
+        ],
+        exclude = [
+            "**/.*",
+            "**/.*/**",
+            "**/BUILD.bazel",
+            "**/*.bzl",
+        ],
+        allow_empty = False,
+    ),
+    makefile = "//common:Makefile",
+    visibility = ["//visibility:public"],
+)
