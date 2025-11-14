@@ -18,9 +18,7 @@ load(
 )
 load(
     "//build/kernel/kleaf:kernel.bzl",
-    "ddk_headers",
-    "ddk_module",
-    "dtbo_image",
+    "dtbo",
     "initramfs",
     "kernel_abi",
     "kernel_build",
@@ -34,8 +32,9 @@ load(
     "vendor_dlkm_image",
 )
 load(
-    "//common:bazel/modules.bzl",
+    "//common:modules.bzl",
     "get_gki_modules_list",
+    "get_gki_protected_modules_list",
     "get_kunit_modules_list",
 )
 load(
@@ -52,121 +51,124 @@ load(
 )
 
 # GKI modules for system_dlkm (common + arm64 specific)
-YUKAWA_SYSTEM_DLKM_GKI_MODULES = [
-    # Common GKI modules
-    "drivers/block/virtio_blk.ko",
-    "drivers/block/zram/zram.ko",
-    "drivers/char/virtio_console.ko",
-    "drivers/gnss/gnss.ko",
-    "drivers/misc/vcpu_stall_detector.ko",
-    "drivers/net/can/dev/can-dev.ko",
-    "drivers/net/can/slcan/slcan.ko",
-    "drivers/net/can/vcan.ko",
-    "drivers/net/macsec.ko",
-    "drivers/net/mii.ko",
-    "drivers/net/ppp/bsd_comp.ko",
-    "drivers/net/ppp/ppp_deflate.ko",
-    "drivers/net/ppp/ppp_generic.ko",
-    "drivers/net/ppp/ppp_mppe.ko",
-    "drivers/net/ppp/pppox.ko",
-    "drivers/net/ppp/pptp.ko",
-    "drivers/net/slip/slhc.ko",
-    "drivers/net/usb/aqc111.ko",
-    "drivers/net/usb/asix.ko",
-    "drivers/net/usb/ax88179_178a.ko",
-    "drivers/net/usb/cdc_eem.ko",
-    "drivers/net/usb/cdc_ether.ko",
-    "drivers/net/usb/cdc_ncm.ko",
-    "drivers/net/usb/r8152.ko",
-    "drivers/net/usb/r8153_ecm.ko",
-    "drivers/net/usb/rtl8150.ko",
-    "drivers/net/usb/usbnet.ko",
-    "drivers/net/wwan/wwan.ko",
-    "drivers/power/sequencing/pwrseq-core.ko",
-    "drivers/pps/pps_core.ko",
-    "drivers/ptp/ptp.ko",
-    "drivers/thunderbolt/thunderbolt.ko",
-    "drivers/usb/class/cdc-acm.ko",
-    "drivers/usb/mon/usbmon.ko",
-    "drivers/usb/serial/ftdi_sio.ko",
-    "drivers/usb/serial/usbserial.ko",
-    "drivers/virtio/virtio_balloon.ko",
-    "drivers/virtio/virtio_pci.ko",
-    "drivers/virtio/virtio_pci_legacy_dev.ko",
-    "drivers/virtio/virtio_pci_modern_dev.ko",
-    "fs/netfs/netfs.ko",
-    "kernel/kheaders.ko",
-    "lib/crc/crc-ccitt.ko",
-    "lib/crypto/libarc4.ko",
-    "mm/zsmalloc.ko",
-    "net/6lowpan/6lowpan.ko",
-    "net/6lowpan/nhc_dest.ko",
-    "net/6lowpan/nhc_fragment.ko",
-    "net/6lowpan/nhc_hop.ko",
-    "net/6lowpan/nhc_ipv6.ko",
-    "net/6lowpan/nhc_mobility.ko",
-    "net/6lowpan/nhc_routing.ko",
-    "net/6lowpan/nhc_udp.ko",
-    "net/8021q/8021q.ko",
-    "net/9p/9pnet.ko",
-    "net/9p/9pnet_fd.ko",
-    "net/can/can.ko",
-    "net/can/can-bcm.ko",
-    "net/can/can-gw.ko",
-    "net/can/can-raw.ko",
-    "net/ieee802154/6lowpan/ieee802154_6lowpan.ko",
-    "net/ieee802154/ieee802154.ko",
-    "net/ieee802154/ieee802154_socket.ko",
-    "net/l2tp/l2tp_core.ko",
-    "net/l2tp/l2tp_ppp.ko",
-    "net/mac802154/mac802154.ko",
-    "net/nfc/nfc.ko",
-    "net/rfkill/rfkill.ko",
-    "net/tipc/tipc.ko",
-    "net/tipc/tipc_diag.ko",
-    "net/tls/tls.ko",
-    "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
-    # ARM64 specific GKI modules
-    "drivers/char/hw_random/cctrng.ko",
-    "drivers/misc/open-dice.ko",
-    "drivers/ptp/ptp_kvm.ko",
-]
+# YUKAWA_SYSTEM_DLKM_GKI_MODULES = [
+#     # Common GKI modules
+#     "drivers/block/virtio_blk.ko",
+#     "drivers/block/zram/zram.ko",
+#     "drivers/char/virtio_console.ko",
+#     "drivers/gnss/gnss.ko",
+#     "drivers/misc/vcpu_stall_detector.ko",
+#     "drivers/net/can/dev/can-dev.ko",
+#     "drivers/net/can/slcan/slcan.ko",
+#     "drivers/net/can/vcan.ko",
+#     "drivers/net/macsec.ko",
+#     "drivers/net/mii.ko",
+#     "drivers/net/ppp/bsd_comp.ko",
+#     "drivers/net/ppp/ppp_deflate.ko",
+#     "drivers/net/ppp/ppp_generic.ko",
+#     "drivers/net/ppp/ppp_mppe.ko",
+#     "drivers/net/ppp/pppox.ko",
+#     "drivers/net/ppp/pptp.ko",
+#     "drivers/net/slip/slhc.ko",
+#     "drivers/net/usb/aqc111.ko",
+#     "drivers/net/usb/asix.ko",
+#     "drivers/net/usb/ax88179_178a.ko",
+#     "drivers/net/usb/cdc_eem.ko",
+#     "drivers/net/usb/cdc_ether.ko",
+#     "drivers/net/usb/cdc_ncm.ko",
+#     "drivers/net/usb/r8152.ko",
+#     "drivers/net/usb/r8153_ecm.ko",
+#     "drivers/net/usb/rtl8150.ko",
+#     "drivers/net/usb/usbnet.ko",
+#     "drivers/net/wwan/wwan.ko",
+#     "drivers/power/sequencing/pwrseq-core.ko",
+#     "drivers/pps/pps_core.ko",
+#     "drivers/ptp/ptp.ko",
+#     "drivers/thunderbolt/thunderbolt.ko",
+#     "drivers/usb/class/cdc-acm.ko",
+#     "drivers/usb/mon/usbmon.ko",
+#     "drivers/usb/serial/ftdi_sio.ko",
+#     "drivers/usb/serial/usbserial.ko",
+#     "drivers/virtio/virtio_balloon.ko",
+#     "drivers/virtio/virtio_pci.ko",
+#     "drivers/virtio/virtio_pci_legacy_dev.ko",
+#     "drivers/virtio/virtio_pci_modern_dev.ko",
+#     "fs/netfs/netfs.ko",
+#     "kernel/kheaders.ko",
+#     "lib/crc/crc-ccitt.ko",
+#     "lib/crypto/libarc4.ko",
+#     "mm/zsmalloc.ko",
+#     "net/6lowpan/6lowpan.ko",
+#     "net/6lowpan/nhc_dest.ko",
+#     "net/6lowpan/nhc_fragment.ko",
+#     "net/6lowpan/nhc_hop.ko",
+#     "net/6lowpan/nhc_ipv6.ko",
+#     "net/6lowpan/nhc_mobility.ko",
+#     "net/6lowpan/nhc_routing.ko",
+#     "net/6lowpan/nhc_udp.ko",
+#     "net/8021q/8021q.ko",
+#     "net/9p/9pnet.ko",
+#     "net/9p/9pnet_fd.ko",
+#     "net/can/can.ko",
+#     "net/can/can-bcm.ko",
+#     "net/can/can-gw.ko",
+#     "net/can/can-raw.ko",
+#     "net/ieee802154/6lowpan/ieee802154_6lowpan.ko",
+#     "net/ieee802154/ieee802154.ko",
+#     "net/ieee802154/ieee802154_socket.ko",
+#     "net/l2tp/l2tp_core.ko",
+#     "net/l2tp/l2tp_ppp.ko",
+#     "net/mac802154/mac802154.ko",
+#     "net/nfc/nfc.ko",
+#     "net/rfkill/rfkill.ko",
+#     "net/tipc/tipc.ko",
+#     "net/tipc/tipc_diag.ko",
+#     "net/tls/tls.ko",
+#     "net/vmw_vsock/vmw_vsock_virtio_transport.ko",
+#     # ARM64 specific GKI modules
+#     "drivers/char/hw_random/cctrng.ko",
+#     "drivers/misc/open-dice.ko",
+#     "drivers/ptp/ptp_kvm.ko",
+# ]
 
 # ti common modules load from system_dlkm.
-YUKAWA_COMMON_GKI_MODULES = get_gki_modules_list("arm64")
+YUKAWA_COMMON_GKI_MODULES = [
+    m
+    for m in get_gki_modules_list("arm64")
+]
 
 YUKAWA_IN_TREE_MODULES = [
     # keep sorted
     "drivers/bcma/bcma.ko",
     "drivers/char/hw_random/meson-rng.ko",
     "drivers/clk/clk-pwm.ko",
-    "drivers/clk/meson/axg.ko",
     "drivers/clk/meson/axg-aoclk.ko",
     "drivers/clk/meson/axg-audio.ko",
+    "drivers/clk/meson/axg.ko",
     "drivers/clk/meson/clk-cpu-dyndiv.ko",
     "drivers/clk/meson/clk-dualdiv.ko",
     "drivers/clk/meson/clk-mpll.ko",
     "drivers/clk/meson/clk-phase.ko",
     "drivers/clk/meson/clk-pll.ko",
     "drivers/clk/meson/clk-regmap.ko",
-    "drivers/clk/meson/g12a.ko",
     "drivers/clk/meson/g12a-aoclk.ko",
-    "drivers/clk/meson/gxbb.ko",
+    "drivers/clk/meson/g12a.ko",
     "drivers/clk/meson/gxbb-aoclk.ko",
+    "drivers/clk/meson/gxbb.ko",
     "drivers/clk/meson/meson-aoclk.ko",
     "drivers/clk/meson/meson-clkc-utils.ko",
+    "drivers/clk/meson/meson-eeclk.ko",
     "drivers/clk/meson/sclk-div.ko",
     "drivers/clk/meson/vclk.ko",
     "drivers/clk/meson/vid-pll-div.ko",
-    "drivers/crypto/amlogic/amlogic-gxl-crypto.ko",
     "drivers/dma-buf/heaps/cma_heap.ko",
     "drivers/dma-buf/heaps/system_heap.ko",
     "drivers/firmware/meson/meson_sm.ko",
     "drivers/gpu/drm/bridge/display-connector.ko",
-    "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",
     "drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko",
     "drivers/gpu/drm/bridge/synopsys/dw-hdmi-cec.ko",
     "drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.ko",
+    "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",
     "drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.ko",
     "drivers/gpu/drm/display/drm_display_helper.ko",
     "drivers/gpu/drm/drm_dma_helper.ko",
@@ -179,8 +181,8 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/iio/adc/meson_saradc.ko",
     "drivers/irqchip/irq-meson-gpio.ko",
     "drivers/leds/leds-gpio.ko",
-    "drivers/media/cec/platform/meson/ao-cec.ko",
     "drivers/media/cec/platform/meson/ao-cec-g12a.ko",
+    "drivers/media/cec/platform/meson/ao-cec.ko",
     "drivers/media/platform/amlogic/meson-ge2d/ge2d.ko",
     "drivers/media/rc/meson-ir.ko",
     "drivers/mfd/khadas-mcu.ko",
@@ -190,43 +192,42 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/net/ethernet/stmicro/stmmac/dwmac-generic.ko",
     "drivers/net/ethernet/stmicro/stmmac/dwmac-meson.ko",
     "drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.ko",
-    "drivers/net/ethernet/stmicro/stmmac/stmmac.ko",
     "drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko",
-    "drivers/net/mdio/mdio-mux.ko",
+    "drivers/net/ethernet/stmicro/stmmac/stmmac.ko",
     "drivers/net/mdio/mdio-mux-meson-g12a.ko",
-    "drivers/net/mdio/mdio-mux-meson-gxl.ko",
+    "drivers/net/mdio/mdio-mux.ko",
     "drivers/net/pcs/pcs_xpcs.ko",
     "drivers/net/phy/meson-gxl.ko",
-    "drivers/net/phy/realtek/realtek.ko",
+    "drivers/net/phy/realtek.ko",
     "drivers/net/phy/smsc.ko",
+    "drivers/net/wireless/broadcom/b43/b43.ko",
     "drivers/net/wireless/broadcom/brcm80211/brcmfmac/bca/brcmfmac-bca.ko",
+    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
     "drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/brcmfmac-cyw.ko",
     "drivers/net/wireless/broadcom/brcm80211/brcmfmac/wcc/brcmfmac-wcc.ko",
-    "drivers/net/wireless/broadcom/b43/b43.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
     "drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko",
     "drivers/pci/controller/dwc/pci-meson.ko",
+    "drivers/phy/amlogic/phy-meson-axg-mipi-dphy.ko",
     "drivers/phy/amlogic/phy-meson-axg-mipi-pcie-analog.ko",
     "drivers/phy/amlogic/phy-meson-axg-pcie.ko",
+    "drivers/phy/amlogic/phy-meson-g12a-mipi-dphy-analog.ko",
     "drivers/phy/amlogic/phy-meson-g12a-usb2.ko",
     "drivers/phy/amlogic/phy-meson-g12a-usb3-pcie.ko",
     "drivers/phy/amlogic/phy-meson-gxl-usb2.ko",
     "drivers/phy/amlogic/phy-meson8b-usb2.ko",
-    "drivers/pinctrl/meson/pinctrl-meson.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-axg.ko",
     "drivers/pinctrl/meson/pinctrl-meson-axg-pmx.ko",
+    "drivers/pinctrl/meson/pinctrl-meson-axg.ko",
     "drivers/pinctrl/meson/pinctrl-meson-g12a.ko",
     "drivers/pinctrl/meson/pinctrl-meson-gxbb.ko",
     "drivers/pinctrl/meson/pinctrl-meson-gxl.ko",
+    "drivers/pinctrl/meson/pinctrl-meson.ko",
     "drivers/pinctrl/meson/pinctrl-meson8-pmx.ko",
     "drivers/pmdomain/amlogic/meson-ee-pwrc.ko",
     "drivers/pmdomain/amlogic/meson-secure-pwrc.ko",
     "drivers/pwm/pwm-meson.ko",
     "drivers/regulator/pwm-regulator.ko",
-    "drivers/reset/amlogic/reset-meson.ko",
-    "drivers/reset/amlogic/reset-meson-audio-arb.ko",
-    "drivers/reset/amlogic/reset-meson-aux.ko",
-    "drivers/reset/amlogic/reset-meson-common.ko",
+    "drivers/reset/reset-meson-audio-arb.ko",
+    "drivers/reset/reset-meson.ko",
     "drivers/rtc/rtc-meson-vrtc.ko",
     "drivers/soc/amlogic/meson-canvas.ko",
     "drivers/soc/amlogic/meson-clk-measure.ko",
@@ -238,11 +239,9 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/tty/serial/meson_uart.ko",
     "drivers/usb/dwc2/dwc2.ko",
     "drivers/usb/dwc3/dwc3-meson-g12a.ko",
-    "drivers/watchdog/meson_gxbb_wdt.ko",
-    "drivers/watchdog/meson_wdt.ko",
-    "lib/math/cordic.ko",
-    "net/mac80211/mac80211.ko",
-    "net/wireless/cfg80211.ko",
+    "lib/math/cordic.ko",                                                                                                                                                                     
+    "net/mac80211/mac80211.ko",                                                                                                                                                               
+    "net/wireless/cfg80211.ko",                                                                                                                                                               
     "sound/soc/codecs/snd-soc-dmic.ko",
     "sound/soc/codecs/snd-soc-hdmi-codec.ko",
     "sound/soc/codecs/snd-soc-spdif-rx.ko",
@@ -268,142 +267,139 @@ YUKAWA_IN_TREE_MODULES = [
 ]
 
 YUKAWA_VENDOR_BOOT_MODULES = [
-    "drivers/base/regmap/regmap-ram.ko",
-    "drivers/base/regmap/regmap-raw-ram.ko",
-    "drivers/char/hw_random/meson-rng.ko",
-    "drivers/clk/meson/axg-aoclk.ko",
-    "drivers/clk/meson/axg-audio.ko",
-    "drivers/clk/meson/axg.ko",
-    "drivers/clk/meson/clk-cpu-dyndiv.ko",
-    "drivers/clk/meson/clk-dualdiv.ko",
-    "drivers/clk/meson/clk-mpll.ko",
-    "drivers/clk/meson/clk-phase.ko",
-    "drivers/clk/meson/clk-pll.ko",
-    "drivers/clk/meson/clk-regmap.ko",
-    "drivers/clk/meson/g12a-aoclk.ko",
-    "drivers/clk/meson/g12a.ko",
-    "drivers/clk/meson/gxbb-aoclk.ko",
-    "drivers/clk/meson/gxbb.ko",
-    "drivers/clk/meson/meson-aoclk.ko",
-    "drivers/clk/meson/meson-clkc-utils.ko",
-    "drivers/clk/meson/sclk-div.ko",
-    "drivers/clk/meson/vclk.ko",
-    "drivers/clk/meson/vid-pll-div.ko",
-    "drivers/crypto/amlogic/amlogic-gxl-crypto.ko",
-    "drivers/dma-buf/heaps/cma_heap.ko",
-    "drivers/dma-buf/heaps/system_heap.ko",
-    "drivers/firmware/meson/meson_sm.ko",
-    "drivers/i2c/busses/i2c-meson.ko",
-    "drivers/iio/adc/meson_saradc.ko",
-    "drivers/irqchip/irq-meson-gpio.ko",
-    "drivers/media/platform/amlogic/meson-ge2d/ge2d.ko",
-    "drivers/media/rc/meson-ir.ko",
-    "drivers/mfd/khadas-mcu.ko",
-    "drivers/mmc/core/pwrseq_emmc.ko",
-    "drivers/mmc/core/pwrseq_simple.ko",
-    "drivers/mmc/host/meson-gx-mmc.ko",
-    "drivers/net/pcs/pcs_xpcs.ko",
-    "drivers/phy/amlogic/phy-meson-g12a-usb2.ko",
-    "drivers/phy/amlogic/phy-meson-g12a-usb3-pcie.ko",
-    "drivers/phy/amlogic/phy-meson-gxl-usb2.ko",
-    "drivers/phy/amlogic/phy-meson8b-usb2.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-axg-pmx.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-axg.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-g12a.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-gxbb.ko",
-    "drivers/pinctrl/meson/pinctrl-meson-gxl.ko",
-    "drivers/pinctrl/meson/pinctrl-meson.ko",
-    "drivers/pinctrl/meson/pinctrl-meson8-pmx.ko",
-    "drivers/pwm/pwm-meson.ko",
-    "drivers/regulator/pwm-regulator.ko",
-    "drivers/reset/amlogic/reset-meson-audio-arb.ko",
-    "drivers/reset/amlogic/reset-meson-aux.ko",
-    "drivers/reset/amlogic/reset-meson-common.ko",
-    "drivers/reset/amlogic/reset-meson.ko",
-    "drivers/rtc/rtc-meson-vrtc.ko",
-    "drivers/soc/amlogic/meson-clk-measure.ko",
-    "drivers/soc/amlogic/meson-gx-pwrc-vpu.ko",
-    "drivers/pmdomain/amlogic/meson-ee-pwrc.ko",
-    "drivers/pmdomain/amlogic/meson-secure-pwrc.ko",
-    "drivers/thermal/amlogic_thermal.ko",
-    "drivers/thermal/khadas_mcu_fan.ko ",
-    "drivers/tty/serial/meson_uart.ko",
-    "drivers/usb/dwc3/dwc3-meson-g12a.ko",
-    "drivers/watchdog/meson_gxbb_wdt.ko",
-    "drivers/watchdog/meson_wdt.ko",
+    "amlogic_thermal.ko",
+    "axg-aoclk.ko",
+    "axg-audio.ko",
+    "axg.ko",
+    "clk-cpu-dyndiv.ko",
+    "clk-dualdiv.ko",
+    "clk-mpll.ko",
+    "clk-phase.ko",
+    "clk-pll.ko",
+    "clk-regmap.ko",
+    "cma_heap.ko",
+    "dwc3-meson-g12a.ko",
+    "g12a-aoclk.ko",
+    "g12a.ko",
+    "ge2d.ko",
+    "gxbb-aoclk.ko",
+    "gxbb.ko",
+    "i2c-meson.ko",
+    "irq-meson-gpio.ko",
+    "meson-aoclk.ko",
+    "meson-clk-measure.ko",
+    "meson-clkc-utils.ko",
+    "meson-ee-pwrc.ko",
+    "meson-gx-mmc.ko",
+    "meson-ir.ko",
+    "meson-rng.ko",
+    "meson-secure-pwrc.ko",
+    "meson_saradc.ko",
+    "meson_sm.ko",
+    "meson_uart.ko",
+    "pcs_xpcs.ko",
+    "phy-meson-g12a-usb2.ko",
+    "phy-meson-g12a-usb3-pcie.ko",
+    "phy-meson-gxl-usb2.ko",
+    "phy-meson8b-usb2.ko",
+    "pinctrl-meson-axg-pmx.ko",
+    "pinctrl-meson-axg.ko",
+    "pinctrl-meson-g12a.ko",
+    "pinctrl-meson-gxbb.ko",
+    "pinctrl-meson-gxl.ko",
+    "pinctrl-meson.ko",
+    "pinctrl-meson8-pmx.ko",
+    "pwm-meson.ko",
+    "pwm-regulator.ko",
+    "pwrseq_emmc.ko",
+    "pwrseq_simple.ko",
+    "regmap-ram.ko",
+    "regmap-raw-ram.ko",
+    "reset-meson-audio-arb.ko",
+    "reset-meson.ko",
+    "rtc-meson-vrtc.ko",
+    "sclk-div.ko",
+    "system_heap.ko",
+    "vclk.ko",
+    "vid-pll-div.ko",
 ]
 
 YUKAWA_VENDOR_DLKM_MODULES = [
-    "drivers/bcma/bcma.ko",
-    "drivers/clk/clk-pwm.ko",
-    "drivers/gpu/drm/bridge/display-connector.ko",
-    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko",
-    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-cec.ko",
-    "drivers/gpu/drm/bridge/synopsys/dw-hdmi-i2s-audio.ko",
-    "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",
-    "drivers/gpu/drm/display/drm_display_helper.ko",
-    "drivers/gpu/drm/drm_dma_helper.ko",
-    "drivers/gpu/drm/meson/meson-drm.ko",
-    "drivers/gpu/drm/meson/meson_dw_hdmi.ko",
-    "drivers/gpu/drm/panfrost/panfrost.ko",
-    "drivers/gpu/drm/scheduler/gpu-sched.ko",
-    "drivers/leds/leds-gpio.ko",
-    "drivers/media/cec/platform/meson/ao-cec-g12a.ko",
-    "drivers/media/cec/platform/meson/ao-cec.ko",
-    "drivers/net/wireless/broadcom/b43/b43.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/bca/brcmfmac-bca.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/cyw/brcmfmac-cyw.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/wcc/brcmfmac-wcc.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko",
-    "drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko",
-    "drivers/net/ethernet/stmicro/stmmac/dwmac-meson.ko",
-    "drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.ko",
-    "drivers/net/ethernet/stmicro/stmmac/stmmac-platform.ko",
-    "drivers/net/ethernet/stmicro/stmmac/stmmac.ko",
-    "drivers/net/mdio/mdio-mux-meson-g12a.ko",
-    "drivers/net/mdio/mdio-mux.ko",
-    "drivers/net/phy/meson-gxl.ko",
-    "drivers/net/phy/realtek/realtek.ko",
-    "drivers/net/phy/smsc.ko",
-    "drivers/pci/controller/dwc/pci-meson.ko",
-    "drivers/phy/amlogic/phy-meson-axg-mipi-pcie-analog.ko",
-    "drivers/phy/amlogic/phy-meson-axg-pcie.ko",
-    "drivers/soc/amlogic/meson-canvas.ko",
-    "drivers/spi/spi-meson-spicc.ko",
-    "drivers/spi/spi-meson-spifc.ko",
-    "drivers/ssb/ssb.ko",
-    "drivers/usb/dwc2/dwc2.ko",
-    "lib/math/cordic.ko",
-    "net/mac80211/mac80211.ko",
-    "net/wireless/cfg80211.ko",
-    "sound/soc/codecs/snd-soc-dmic.ko",
-    "sound/soc/codecs/snd-soc-hdmi-codec.ko",
-    "sound/soc/codecs/snd-soc-spdif-rx.ko",
-    "sound/soc/codecs/snd-soc-spdif-tx.ko",
-    "sound/soc/meson/snd-soc-meson-aiu.ko",
-    "sound/soc/meson/snd-soc-meson-axg-fifo.ko",
-    "sound/soc/meson/snd-soc-meson-axg-frddr.ko",
-    "sound/soc/meson/snd-soc-meson-axg-pdm.ko",
-    "sound/soc/meson/snd-soc-meson-axg-sound-card.ko",
-    "sound/soc/meson/snd-soc-meson-axg-spdifin.ko",
-    "sound/soc/meson/snd-soc-meson-axg-spdifout.ko",
-    "sound/soc/meson/snd-soc-meson-axg-tdm-formatter.ko",
-    "sound/soc/meson/snd-soc-meson-axg-tdm-interface.ko",
-    "sound/soc/meson/snd-soc-meson-axg-tdmin.ko",
-    "sound/soc/meson/snd-soc-meson-axg-tdmout.ko",
-    "sound/soc/meson/snd-soc-meson-axg-toddr.ko",
-    "sound/soc/meson/snd-soc-meson-card-utils.ko",
-    "sound/soc/meson/snd-soc-meson-codec-glue.ko",
-    "sound/soc/meson/snd-soc-meson-g12a-toacodec.ko",
-    "sound/soc/meson/snd-soc-meson-g12a-tohdmitx.ko",
-    "sound/soc/meson/snd-soc-meson-gx-sound-card.ko",
-    "sound/soc/meson/snd-soc-meson-t9015.ko",
+    "ao-cec-g12a.ko",
+    "ao-cec.ko",
+    "b43.ko",
+    "bcma.ko",
+    "brcmfmac-bca.ko",
+    "brcmfmac-cyw.ko",
+    "brcmfmac-wcc.ko",
+    "brcmfmac.ko",
+    "brcmutil.ko",
+    "cfg80211.ko",
+    "clk-pwm.ko",
+    "cordic.ko",
+    "display-connector.ko",
+    "drm_display_helper.ko",
+    "drm_dma_helper.ko",
+    "dw-hdmi-ahb-audio.ko",
+    "dw-hdmi-cec.ko",
+    "dw-hdmi-i2s-audio.ko",
+    "dw-hdmi.ko",
+    "dwc2.ko",
+    "dwmac-meson.ko",
+    "dwmac-meson8b.ko",
+    "gpu-sched.ko",
+    "khadas-mcu.ko",
+    "khadas_mcu_fan.ko",
+    "leds-gpio.ko",
+    "mac80211.ko",
+    "mdio-mux-meson-g12a.ko",
+    "mdio-mux.ko",
+    "meson-canvas.ko",
+    "meson-drm.ko",
+    "meson-gxl.ko",
+    "meson_dw_hdmi.ko",
+    "panfrost.ko",
+    "pci-meson.ko",
+    "phy-meson-axg-mipi-dphy.ko",
+    "phy-meson-axg-mipi-pcie-analog.ko",
+    "phy-meson-axg-pcie.ko",
+    "phy-meson-g12a-mipi-dphy-analog.ko",
+    "realtek.ko",
+    "rtc-meson-vrtc.ko",
+    "smsc.ko",
+    "snd-soc-dmic.ko",
+    "snd-soc-hdmi-codec.ko",
+    "snd-soc-meson-aiu.ko",
+    "snd-soc-meson-axg-fifo.ko",
+    "snd-soc-meson-axg-frddr.ko",
+    "snd-soc-meson-axg-pdm.ko",
+    "snd-soc-meson-axg-sound-card.ko",
+    "snd-soc-meson-axg-spdifin.ko",
+    "snd-soc-meson-axg-spdifout.ko",
+    "snd-soc-meson-axg-tdm-formatter.ko",
+    "snd-soc-meson-axg-tdm-interface.ko",
+    "snd-soc-meson-axg-tdmin.ko",
+    "snd-soc-meson-axg-tdmout.ko",
+    "snd-soc-meson-axg-toddr.ko",
+    "snd-soc-meson-card-utils.ko",
+    "snd-soc-meson-codec-glue.ko",
+    "snd-soc-meson-g12a-toacodec.ko",
+    "snd-soc-meson-g12a-tohdmitx.ko",
+    "snd-soc-meson-gx-sound-card.ko",
+    "snd-soc-meson-t9015.ko",
+    "snd-soc-spdif-rx.ko",
+    "snd-soc-spdif-tx.ko",
+    "spi-meson-spicc.ko",
+    "spi-meson-spifc.ko",
+    "ssb.ko",
+    "stmmac-platform.ko",
+    "stmmac.ko",
 ]
 
 YUKAWA_WATCHDOG_MODULE_OUTS = [
     # keep sorted
-    "drivers/watchdog/meson_gxbb_wdt.ko",
-    "drivers/watchdog/meson_wdt.ko",
+    "meson_gxbb_wdt.ko",
+    "meson_wdt.ko",
 ]
 
 YUKAWA_DTBOS = [
@@ -422,64 +418,41 @@ YUKAWA_DTBOS_LOCAL = [
     "meson-g12b-a311d-khadas-vim3-android.dtbo",
 ]
 
-kernel_build(
-    name = "yukawa",
-    srcs = ["//common:kernel_aarch64_sources"],
-    outs = [
-        "Image",
-        "arch/arm64/boot/dts/amlogic/meson-g12a-sei510.dtb",
-        "arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dtb",
-        "arch/arm64/boot/dts/amlogic/meson-sm1-khadas-vim3l.dtb",
-        "arch/arm64/boot/dts/amlogic/meson-sm1-sei610.dtb",
-        "modules.builtin",
-        "modules.builtin.modinfo",
-        "vmlinux",
-        "vmlinux.symvers",
-    ],
-    arch = "arm64",
-    base_kernel = "//common:kernel_aarch64",
-    defconfig = "//common:arch/arm64/configs/gki_defconfig",
-    generate_out_targets = False,
-    make_goals = [
-        "Image",
-        "modules",
-        "amlogic/meson-g12a-sei510.dtb",
-        "amlogic/meson-sm1-sei610.dtb",
-        "amlogic/meson-g12b-a311d-khadas-vim3.dtb",
-        "amlogic/meson-sm1-khadas-vim3l.dtb",
-    ],
-    makefile = "//common:Makefile",
-    module_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64") + YUKAWA_IN_TREE_MODULES + select({
-        "//build/kernel/kleaf:kgdb_is_true": [],
-        "//conditions:default": YUKAWA_WATCHDOG_MODULE_OUTS,
-    }),
-    pre_defconfig_fragments = ["//common:arch/arm64/configs/amlogic_gki.fragment"],
-    visibility = ["//visibility:private"],
+
+initramfs(
+    name = "yukawa_initramfs",
+    kernel_modules_install = "//common:yukawa_modules_install",
+    modules_list = ":yukawa_vendor_boot_modules_list",
+    ramdisk_compression = "lz4",
+    vendor_boot_name = "vendor_boot",
+    deps = [":yukawa_file_contexts"],
 )
 
+
+yukawa_dist_targets = [
+        "//common:kernel_aarch64_download_or_build",
+        "//common:kernel_aarch64_headers",
+] + ["//common:kernel_aarch64/" + m for m in YUKAWA_COMMON_GKI_MODULES]
+
 pkg_files(
-    name = "yukawa_dist_files",
-    srcs = [
-        ":yukawa",
-        ":yukawa_initramfs",
-        ":yukawa_modules_install",
-    ],
+    name = "yukawa_pkg_files",
+    srcs = yukawa_dist_targets,
     strip_prefix = strip_prefix.files_only(),
-    visibility = ["//visibility:private"],
 )
 
 pkg_install(
-    name = "yukawa_dist_base",
+    name = "yukawa_dist",
     srcs = [
+        ":yukawa_pkg_files",
+        ":yukawa_modules_pkg_files",
+        ":yukawa_system_dlkm_pkg_files",  # Add system_dlkm images
+        ":yukawa_vendor_dlkm_pkg_files",  # Add vendor_dlkm images
+        ":yukawa_system_dlkm_modules_pkg_files",
+        ":yukawa_vendor_dlkm_modules_pkg_files",
+        ":yukawa_vendor_boot_modules_pkg_files",
         ":yukawa_dtbo_pkg_files",  # Add yukawa-specific dtbo
-        ":yukawa_dtbs_from_common",  # DTBs and other files from common
         ":yukawa_initramfs_pkg_files",  # Add yukawa-specific initramfs
         ":yukawa_kernel_image_lz4_pkg_files",  # Add lz4 compressed kernel image
-        ":yukawa_ramdisk_modules_from_common",  # Filtered modules for ramdisk
-        ":yukawa_system_dlkm_modules_from_common",  # Filtered modules for system_dlkm
-        ":yukawa_system_dlkm_pkg_files",  # Add system_dlkm images
-        ":yukawa_vendor_dlkm_modules_from_common",  # Filtered modules for vendor_dlkm
-        ":yukawa_vendor_dlkm_pkg_files",  # Add vendor_dlkm images
     ],
     destdir = "out/yukawa/dist",
 )
@@ -500,7 +473,7 @@ write_file(
 write_file(
     name = "yukawa_system_dlkm_modules_list",
     out = "system_dlkm_modules.list",
-    content = YUKAWA_SYSTEM_DLKM_GKI_MODULES,
+    content = YUKAWA_COMMON_GKI_MODULES,
 )
 
 # Create file_contexts files
@@ -508,8 +481,8 @@ write_file(
     name = "yukawa_file_contexts",
     out = "yukawa_file_contexts.txt",
     content = [
-        "/system_ext(/.*)? u:object_r:system_file:s0",
-        "/vendor(/.*)? u:object_r:vendor_file:s0",
+        "/vendor_dlkm(/.*)?                 u:object_r:vendor_file:s0",
+        "/vendor_dlkm/lib/modules(/.*)?    u:object_r:vendor_kernel_modules:s0",
     ],
 )
 
@@ -517,20 +490,8 @@ write_file(
     name = "yukawa_system_file_contexts",
     out = "yukawa_system_file_contexts.txt",
     content = [
-        "/system_dlkm(/.*)? u:object_r:system_file:s0",
+        "/system_dlkm(/.*)? u:object_r:system_dlkm_file:s0",
     ],
-)
-
-kernel_modules_install(
-    name = "yukawa_modules_install",
-    kernel_build = ":yukawa",
-    # kernel_modules = [],  # Mali DDK disabled, using Panfrost instead
-)
-
-merged_kernel_uapi_headers(
-    name = "yukawa_merged_kernel_uapi_headers",
-    kernel_build = ":yukawa",
-    # kernel_modules = [],  # Mali DDK disabled
 )
 
 #
@@ -562,26 +523,19 @@ genrule(
 )
 
 # Create DTBO image from compiled overlays
-dtbo_image(
+dtbo(
     name = "yukawa_dtbo",
+    kernel_build = "//common:yukawa",
     srcs = [
         "//yukawa-device/arch/arm64/boot/dts:dtbo_amlogic",
     ],
 )
 
-initramfs(
-    name = "yukawa_initramfs",
-    kernel_modules_install = ":yukawa_modules_install",
-    modules_list = ":yukawa_vendor_boot_modules_list",
-    ramdisk_compression = "lz4",
-    vendor_boot_name = "vendor_boot",
-    deps = [":yukawa_file_contexts"],
-)
 
 vendor_dlkm_image(
     name = "yukawa_vendor_dlkm_image",
     build_flatten = True,
-    kernel_modules_install = ":yukawa_modules_install",
+    kernel_modules_install = "//common:yukawa_modules_install",
     modules_list = ":yukawa_vendor_dlkm_modules_list",
     deps = [":yukawa_file_contexts"],
 )
@@ -598,7 +552,7 @@ system_dlkm_image(
     base = "//common:kernel_aarch64_system_dlkm_image",
     build_flatten = True,
     fs_types = ["ext4"],
-    kernel_modules_install = ":yukawa_modules_install",
+    kernel_modules_install = "//common:yukawa_modules_install",
     modules_blocklist = None,
     modules_list = ":yukawa_system_dlkm_modules_list",
     deps = [":yukawa_system_file_contexts"],
@@ -648,38 +602,29 @@ genrule(
 
 pkg_files(
     name = "yukawa_system_dlkm_modules_pkg_files",
-    srcs = [":yukawa_modules_install"],
+    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
     prefix = "system_dlkm/",
-    strip_prefix = strip_prefix.from_pkg(),
+    strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_vendor_dlkm_modules_pkg_files",
-    srcs = [":yukawa_modules_install"],
+    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
     prefix = "vendor_dlkm/",
-    strip_prefix = strip_prefix.from_pkg(),
+    strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_modules_pkg_files",
-    srcs = [":yukawa_modules_install"],
+    srcs = ["//common:yukawa_modules_install"],
     prefix = "modules",
     strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_vendor_boot_modules_pkg_files",
-    srcs = [":yukawa_modules_install"],
+    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
     prefix = "ramdisk",
-    strip_prefix = strip_prefix.from_pkg(),
-)
-
-# Copy DTBs from common yukawa
-pkg_files(
-    name = "yukawa_dtbs_from_common",
-    srcs = [":yukawa_dist_files"],
-    excludes = ["*.ko"],  # Exclude modules, we only want DTBs and other files
-    prefix = "",
     strip_prefix = strip_prefix.files_only(),
 )
 
@@ -695,187 +640,4 @@ pkg_files(
     srcs = [":yukawa_initramfs"],
     prefix = "initramfs",
     strip_prefix = strip_prefix.files_only(),
-)
-
-# Extract filtered modules for system_dlkm from staging archive
-genrule(
-    name = "yukawa_system_dlkm_modules_filtered",
-    srcs = [":yukawa_system_dlkm_image"],
-    outs = ["system_dlkm_filtered.tar"],
-    cmd = """
-        mkdir -p $(@D)/system_dlkm_filtered
-        # Extract staging archive and copy flatten modules
-        for f in $(locations :yukawa_system_dlkm_image); do
-            if [[ $$f == *staging_archive.tar.gz ]]; then
-                tar -xzf $$f -C $(@D)/
-                # Copy flatten modules
-                if [ -d $(@D)/flatten/lib/modules ]; then
-                    cp $(@D)/flatten/lib/modules/*.ko $(@D)/system_dlkm_filtered/ 2>/dev/null || true
-                fi
-                break
-            fi
-        done
-        tar -cf $@ -C $(@D)/system_dlkm_filtered .
-    """,
-)
-
-# Extract filtered modules for vendor_dlkm based on modules.load
-genrule(
-    name = "yukawa_vendor_dlkm_modules_filtered",
-    srcs = [
-        ":yukawa_vendor_dlkm_image",
-        ":yukawa_dist_files",
-    ],
-    outs = ["vendor_dlkm_filtered.tar"],
-    cmd = """
-        mkdir -p $(@D)/vendor_dlkm_filtered
-        mkdir -p $(@D)/all_modules
-        # Copy all modules from common dist (includes Panfrost)
-        for f in $(locations :yukawa_dist_files); do
-            if [[ $$f == *.ko ]]; then
-                cp $$f $(@D)/all_modules/
-            fi
-        done
-        # Find modules.load
-        modules_load=""
-        for f in $(locations :yukawa_vendor_dlkm_image); do
-            if [[ $$f == *modules.load ]] && [[ $$f == *vendor_dlkm* ]]; then
-                modules_load=$$f
-                break
-            fi
-        done
-        # Copy only filtered modules
-        if [ -n "$$modules_load" ]; then
-            while IFS= read -r module; do
-                [ -z "$$module" ] && continue
-                module_name=$$(basename $$module)
-                if [ -f $(@D)/all_modules/$$module_name ]; then
-                    cp $(@D)/all_modules/$$module_name $(@D)/vendor_dlkm_filtered/
-                fi
-            done < $$modules_load
-        fi
-        tar -cf $@ -C $(@D)/vendor_dlkm_filtered .
-    """,
-)
-
-# # Extract filtered modules for ramdisk based on modules.load
-genrule(
-    name = "yukawa_ramdisk_modules_filtered",
-    srcs = [
-        ":yukawa_initramfs",
-        ":yukawa_dist_files",
-    ],
-    outs = ["ramdisk_filtered.tar"],
-    cmd = """
-        mkdir -p $(@D)/ramdisk_filtered
-        mkdir -p $(@D)/all_modules
-        # Copy all modules from common dist (includes Panfrost)
-        for f in $(locations :yukawa_dist_files); do
-            if [[ $$f == *.ko ]]; then
-                cp $$f $(@D)/all_modules/
-            fi
-        done
-        # Find vendor_boot.modules.load
-        modules_load=""
-        for f in $(locations :yukawa_initramfs); do
-            if [[ $$f == *vendor_boot.modules.load ]]; then
-                modules_load=$$f
-                break
-            fi
-        done
-        # Copy only filtered modules
-        if [ -n "$$modules_load" ]; then
-            while IFS= read -r module; do
-                [ -z "$$module" ] && continue
-                module_name=$$(basename $$module)
-                if [ -f $(@D)/all_modules/$$module_name ]; then
-                    cp $(@D)/all_modules/$$module_name $(@D)/ramdisk_filtered/
-                fi
-            done < $$modules_load
-        fi
-        tar -cf $@ -C $(@D)/ramdisk_filtered .
-    """,
-)
-
-pkg_files(
-    name = "yukawa_system_dlkm_modules_from_common",
-    srcs = [":yukawa_system_dlkm_modules_filtered"],
-    prefix = "system_dlkm/",
-    strip_prefix = strip_prefix.files_only(),
-)
-
-pkg_files(
-    name = "yukawa_vendor_dlkm_modules_from_common",
-    srcs = [":yukawa_vendor_dlkm_modules_filtered"],
-    prefix = "vendor_dlkm/",
-    strip_prefix = strip_prefix.files_only(),
-)
-
-pkg_files(
-    name = "yukawa_ramdisk_modules_from_common",
-    srcs = [":yukawa_ramdisk_modules_filtered"],
-    prefix = "ramdisk/",
-    strip_prefix = strip_prefix.files_only(),
-)
-
-# Create a wrapper script that runs pkg_install and extracts tars
-genrule(
-    name = "yukawa_dist",
-    srcs = [],
-    outs = ["run_yukawa_dist.sh"],
-    cmd = """
-cat > $@ << 'EOF'
-#!/bin/bash
-set -e
-
-# Parse destdir argument - support both --destdir <path> and --destdir=<path>
-DESTDIR="out/yukawa/dist"
-for arg in "$$@"; do
-    if [[ "$$arg" == --destdir=* ]]; then
-        DESTDIR="$${arg#--destdir=}"
-        break
-    elif [ "$$arg" = "--destdir" ]; then
-        shift
-        DESTDIR="$$1"
-        break
-    fi
-done
-
-# Run pkg_install with proper arguments
-./tools/bazel run --config=local //yukawa-device:yukawa_dist_base -- "$$@"
-
-echo "Extracting filtered module archives from $$DESTDIR..."
-
-# Extract system_dlkm modules
-if [ -f "$$DESTDIR/system_dlkm/system_dlkm_filtered.tar" ]; then
-    echo "  Extracting system_dlkm modules..."
-    tar -xf "$$DESTDIR/system_dlkm/system_dlkm_filtered.tar" -C "$$DESTDIR/system_dlkm/"
-    rm "$$DESTDIR/system_dlkm/system_dlkm_filtered.tar"
-    MODULE_COUNT=$$(ls "$$DESTDIR/system_dlkm"/*.ko 2>/dev/null | wc -l)
-    echo "    $$MODULE_COUNT modules extracted to system_dlkm/"
-fi
-
-# Extract vendor_dlkm modules
-if [ -f "$$DESTDIR/vendor_dlkm/vendor_dlkm_filtered.tar" ]; then
-    echo "  Extracting vendor_dlkm modules..."
-    tar -xf "$$DESTDIR/vendor_dlkm/vendor_dlkm_filtered.tar" -C "$$DESTDIR/vendor_dlkm/"
-    rm "$$DESTDIR/vendor_dlkm/vendor_dlkm_filtered.tar"
-    MODULE_COUNT=$$(ls "$$DESTDIR/vendor_dlkm"/*.ko 2>/dev/null | wc -l)
-    echo "    $$MODULE_COUNT modules extracted to vendor_dlkm/"
-fi
-
-# Extract ramdisk modules
-if [ -f "$$DESTDIR/ramdisk/ramdisk_filtered.tar" ]; then
-    echo "  Extracting ramdisk modules..."
-    tar -xf "$$DESTDIR/ramdisk/ramdisk_filtered.tar" -C "$$DESTDIR/ramdisk/"
-    rm "$$DESTDIR/ramdisk/ramdisk_filtered.tar"
-    MODULE_COUNT=$$(ls "$$DESTDIR/ramdisk"/*.ko 2>/dev/null | wc -l)
-    echo "    $$MODULE_COUNT modules extracted to ramdisk/"
-fi
-
-echo "Done! Filtered modules extracted successfully."
-EOF
-chmod +x $@
-    """,
-    executable = True,
 )
