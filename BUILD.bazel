@@ -20,8 +20,6 @@ load(
     "//build/kernel/kleaf:kernel.bzl",
     "dtbo",
     "initramfs",
-    "kernel_abi",
-    "kernel_build",
     "kernel_build_config",
     "kernel_dtstree",
     "kernel_modules_install",
@@ -80,6 +78,8 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/clk/meson/sclk-div.ko",
     "drivers/clk/meson/vclk.ko",
     "drivers/clk/meson/vid-pll-div.ko",
+    "drivers/crypto/amlogic/amlogic-gxl-crypto.ko",
+    "drivers/cpufreq/cpufreq-dt.ko",
     "drivers/dma-buf/heaps/cma_heap.ko",
     "drivers/dma-buf/heaps/system_heap.ko",
     "drivers/firmware/meson/meson_sm.ko",
@@ -155,7 +155,6 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/ssb/ssb.ko",
     "drivers/thermal/amlogic_thermal.ko",
     "drivers/thermal/khadas_mcu_fan.ko",
-    "drivers/tty/serial/meson_uart.ko",
     "drivers/usb/dwc2/dwc2.ko",
     "drivers/usb/dwc3/dwc3-meson-g12a.ko",
     "lib/math/cordic.ko",                                                                                                                                                                     
@@ -209,13 +208,13 @@ YUKAWA_VENDOR_BOOT_MODULES = [
     "meson-clk-measure.ko",
     "meson-clkc-utils.ko",
     "meson-ee-pwrc.ko",
+    "meson-eeclk.ko",
     "meson-gx-mmc.ko",
     "meson-ir.ko",
     "meson-rng.ko",
     "meson-secure-pwrc.ko",
     "meson_saradc.ko",
     "meson_sm.ko",
-    "meson_uart.ko",
     "pcs_xpcs.ko",
     "phy-meson-g12a-usb2.ko",
     "phy-meson-g12a-usb3-pcie.ko",
@@ -244,6 +243,7 @@ YUKAWA_VENDOR_BOOT_MODULES = [
 ]
 
 YUKAWA_VENDOR_DLKM_MODULES = [
+    "amlogic-gxl-crypto.ko",
     "ao-cec-g12a.ko",
     "ao-cec.ko",
     "b43.ko",
@@ -256,6 +256,7 @@ YUKAWA_VENDOR_DLKM_MODULES = [
     "cfg80211.ko",
     "clk-pwm.ko",
     "cordic.ko",
+    "cpufreq-dt.ko",
     "display-connector.ko",
     "drm_display_helper.ko",
     "drm_dma_helper.ko",
@@ -423,12 +424,12 @@ write_file(
 #
 genrule(
     name = "yukawa_kernel_image_lz4",
-    srcs = ["//common:kernel_aarch64"],
+    srcs = ["//common:yukawa"],
     outs = ["yukawa-Image.lz4"],
     cmd = """
         # Find the Image file (not Image.gz or Image.lz4)
         IMAGE_FILE=""
-        for f in $(locations //common:kernel_aarch64); do
+        for f in $(locations //common:yukawa); do
             if [[ $$(basename $$f) == "Image" ]]; then
                 IMAGE_FILE=$$f
                 break
@@ -522,14 +523,20 @@ genrule(
 
 pkg_files(
     name = "yukawa_system_dlkm_modules_pkg_files",
-    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
+    srcs = select({
+        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
+        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
+    }),
     prefix = "system_dlkm/",
     strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_vendor_dlkm_modules_pkg_files",
-    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
+    srcs = select({
+        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
+        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
+    }),
     prefix = "vendor_dlkm/",
     strip_prefix = strip_prefix.files_only(),
 )
@@ -543,7 +550,10 @@ pkg_files(
 
 pkg_files(
     name = "yukawa_vendor_boot_modules_pkg_files",
-    srcs = ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
+    srcs = select({
+        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
+        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
+    }),
     prefix = "ramdisk",
     strip_prefix = strip_prefix.files_only(),
 )
