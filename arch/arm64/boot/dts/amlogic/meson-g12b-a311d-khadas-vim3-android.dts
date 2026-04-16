@@ -53,3 +53,9 @@
      /* WiFi firmware requires power to be kept while in suspend */
     keep-power-in-suspend;
 };
+
+&pwm_ef {
+	status = "okay";
+	pinctrl-0 = <&pwm_e_pins>, <&pwm_f_h_pins>;
+	pinctrl-names = "default";
+};

@@ -183,6 +183,7 @@ YUKAWA_IN_TREE_MODULES = [
 ]
 
 YUKAWA_VENDOR_BOOT_MODULES = [
+    "adc-keys.ko",
     "amlogic_thermal.ko",
     "axg-aoclk.ko",
     "axg-audio.ko",
@@ -198,6 +199,7 @@ YUKAWA_VENDOR_BOOT_MODULES = [
     "g12a-aoclk.ko",
     "g12a.ko",
     "ge2d.ko",
+    "gpio_keys_polled.ko",
     "gxbb-aoclk.ko",
     "gxbb.ko",
     "i2c-meson.ko",
