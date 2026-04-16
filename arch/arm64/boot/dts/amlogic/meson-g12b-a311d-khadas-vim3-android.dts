@@ -40,9 +40,9 @@
 };
 
 &uart_C {
-        status = "okay";
-        pinctrl-0 = <&uart_c_pins>;
-        pinctrl-names = "default";
+	status = "okay";
+	pinctrl-0 = <&uart_c_pins>;
+	pinctrl-names = "default";
 };
 
 &emmc_pwrseq{

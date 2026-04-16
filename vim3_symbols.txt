@@ -1,0 +1,8 @@
+[abi_symbol_list]
+devm_input_allocate_device
+fwnode_property_read_string
+fwnode_property_read_u32_array
+input_set_abs_params
+devm_iio_channel_get
+iio_get_channel_type
+iio_read_channel_processed

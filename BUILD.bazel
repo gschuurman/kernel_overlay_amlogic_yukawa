@@ -1,4 +1,4 @@
-# SPDX-License-Idenyukawafier: GPL-2.0
+# SPDX-License-Identifier: GPL-2.0
 load(
     "@bazel_skylib//lib:paths.bzl",
     "paths",
@@ -20,6 +20,7 @@ load(
     "//build/kernel/kleaf:kernel.bzl",
     "dtbo",
     "initramfs",
+    "kernel_build",
     "kernel_build_config",
     "kernel_dtstree",
     "kernel_modules_install",
@@ -48,14 +49,16 @@ load(
     "pkg_install_with_extraction",
 )
 
-# ti common modules load from system_dlkm.
+# ---------------------------------------------------------
+# MODULE LISTS
+# ---------------------------------------------------------
+
 YUKAWA_COMMON_GKI_MODULES = [
     m
     for m in get_gki_modules_list("arm64")
 ]
 
 YUKAWA_IN_TREE_MODULES = [
-    # keep sorted
     "drivers/bcma/bcma.ko",
     "drivers/char/hw_random/meson-rng.ko",
     "drivers/clk/clk-pwm.ko",
@@ -98,6 +101,8 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/gpu/drm/scheduler/gpu-sched.ko",
     "drivers/i2c/busses/i2c-meson.ko",
     "drivers/iio/adc/meson_saradc.ko",
+    "drivers/input/keyboard/adc-keys.ko",
+    "drivers/input/keyboard/gpio_keys_polled.ko",
     "drivers/irqchip/irq-meson-gpio.ko",
     "drivers/leds/leds-gpio.ko",
     "drivers/media/cec/platform/meson/ao-cec-g12a.ko",
@@ -155,9 +160,9 @@ YUKAWA_IN_TREE_MODULES = [
     "drivers/tty/serial/meson_uart.ko",
     "drivers/usb/dwc2/dwc2.ko",
     "drivers/usb/dwc3/dwc3-meson-g12a.ko",
-    "lib/math/cordic.ko",                                                                                                                                                                     
-    "net/mac80211/mac80211.ko",                                                                                                                                                               
-    "net/wireless/cfg80211.ko",                                                                                                                                                               
+    "lib/math/cordic.ko",
+    "net/mac80211/mac80211.ko",
+    "net/wireless/cfg80211.ko",
     "sound/soc/codecs/snd-soc-dmic.ko",
     "sound/soc/codecs/snd-soc-hdmi-codec.ko",
     "sound/soc/codecs/snd-soc-spdif-rx.ko",
@@ -314,12 +319,6 @@ YUKAWA_VENDOR_DLKM_MODULES = [
     "stmmac.ko",
 ]
 
-YUKAWA_WATCHDOG_MODULE_OUTS = [
-    # keep sorted
-    "meson_gxbb_wdt.ko",
-    "meson_wdt.ko",
-]
-
 YUKAWA_DTBOS = [
     "meson-g12b-a311d-khadas-vim3-android.dtb",
     "meson-sm1-khadas-vim3l-android.dtb",
@@ -330,22 +329,72 @@ YUKAWA_DTBS = [
     "meson-sm1-khadas-vim3l.dtb",
 ]
 
-# Yukawa DTBOs (device tree overlays)
 YUKAWA_DTBOS_LOCAL = [
     "meson-sm1-khadas-vim3l-android.dtbo",
     "meson-g12b-a311d-khadas-vim3-android.dtbo",
 ]
 
+# ---------------------------------------------------------
+# NATIVE KLEAF KERNEL OVERRIDE (Cloned from common/BUILD.bazel)
+# ---------------------------------------------------------
+
+kernel_build(
+    name = "yukawa_vim3",
+    srcs = ["//common:kernel_aarch64_sources"],
+    outs = [
+        "Image",
+        "System.map",
+        "arch/arm64/boot/dts/amlogic/meson-g12a-sei510.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-sm1-khadas-vim3l.dtb",
+        "arch/arm64/boot/dts/amlogic/meson-sm1-sei610.dtb",
+        "modules.builtin",
+        "modules.builtin.modinfo",
+        "vmlinux",
+        "vmlinux.symvers",
+    ],
+    arch = "arm64",
+    defconfig = "//common:arch/arm64/configs/gki_defconfig",
+    kmi_symbol_list = "//common:gki/aarch64/symbols/yukawa",
+    additional_kmi_symbol_lists = [
+        "vim3_symbols.txt",
+    ],
+    make_goals = [
+        "Image",
+        "modules",
+        "amlogic/meson-g12a-sei510.dtb",
+        "amlogic/meson-sm1-sei610.dtb",
+        "amlogic/meson-g12b-a311d-khadas-vim3.dtb",
+        "amlogic/meson-sm1-khadas-vim3l.dtb",
+    ],
+    makefile = "//common:Makefile",
+    module_outs = YUKAWA_COMMON_GKI_MODULES + get_kunit_modules_list("arm64") + YUKAWA_IN_TREE_MODULES + [
+        "drivers/watchdog/meson_gxbb_wdt.ko",
+        "drivers/watchdog/meson_wdt.ko",
+    ],
+    pre_defconfig_fragments = ["//common:arch/arm64/configs/amlogic_gki.fragment"],
+    post_defconfig_fragments = ["vim3_extra.fragment"],
+    visibility = ["//visibility:public"],
+)
+
+kernel_modules_install(
+    name = "yukawa_vim3_modules_install",
+    kernel_build = ":yukawa_vim3",
+    visibility = ["//visibility:public"],
+)
+
+# ---------------------------------------------------------
+# IMAGES & RAMDISK
+# ---------------------------------------------------------
 
 initramfs(
     name = "yukawa_initramfs",
-    kernel_modules_install = "//common:yukawa_modules_install",
+    kernel_modules_install = ":yukawa_vim3_modules_install",
     modules_list = ":yukawa_vendor_boot_modules_list",
     ramdisk_compression = "lz4",
     vendor_boot_name = "vendor_boot",
     deps = [":yukawa_file_contexts"],
 )
-
 
 yukawa_dist_targets = [
         "//common:kernel_aarch64_download_or_build",
@@ -363,20 +412,19 @@ pkg_install(
     srcs = [
         ":yukawa_pkg_files",
         ":yukawa_modules_pkg_files",
-        ":yukawa_system_dlkm_pkg_files",  # Add system_dlkm images
-        ":yukawa_vendor_dlkm_pkg_files",  # Add vendor_dlkm images
+        ":yukawa_system_dlkm_pkg_files",
+        ":yukawa_vendor_dlkm_pkg_files",
         ":yukawa_system_dlkm_modules_pkg_files",
         ":yukawa_vendor_dlkm_modules_pkg_files",
         ":yukawa_vendor_boot_modules_pkg_files",
-        ":yukawa_dtbo_pkg_files",  # Add yukawa-specific dtbo
-        ":yukawa_dtbs_pkg_files",  # Add yukawa DTBs
-        ":yukawa_initramfs_pkg_files",  # Add yukawa-specific initramfs
-        ":yukawa_kernel_image_lz4_pkg_files",  # Add lz4 compressed kernel image
+        ":yukawa_dtbo_pkg_files",
+        ":yukawa_dtbs_pkg_files",
+        ":yukawa_initramfs_pkg_files",
+        ":yukawa_kernel_image_lz4_pkg_files",
     ],
     destdir = "out/yukawa/dist",
 )
 
-# Create modules lists using write_file
 write_file(
     name = "yukawa_vendor_boot_modules_list",
     out = "vendor_boot_modules.list",
@@ -395,12 +443,11 @@ write_file(
     content = YUKAWA_COMMON_GKI_MODULES,
 )
 
-# Create file_contexts files
 write_file(
     name = "yukawa_file_contexts",
     out = "yukawa_file_contexts.txt",
     content = [
-        "/vendor_dlkm(/.*)?                 u:object_r:vendor_file:s0",
+        "/vendor_dlkm(/.*)?                  u:object_r:vendor_file:s0",
         "/vendor_dlkm/lib/modules(/.*)?    u:object_r:vendor_kernel_modules:s0",
     ],
 )
@@ -413,21 +460,13 @@ write_file(
     ],
 )
 
-#
-# NOTE: Using Image.lz4 in make_goals does not work because
-#   kernel build passes legacy option (-l) to lz4 command
-#   and u-boot fails to decompress.  Instead, add custom
-#   command to lz4 compress same options as kernel, but
-#   without the -l.
-#
 genrule(
     name = "yukawa_kernel_image_lz4",
-    srcs = ["//common:yukawa"],
+    srcs = [":yukawa_vim3"],
     outs = ["yukawa-Image.lz4"],
     cmd = """
-        # Find the Image file (not Image.gz or Image.lz4)
         IMAGE_FILE=""
-        for f in $(locations //common:yukawa); do
+        for f in $(locations :yukawa_vim3); do
             if [[ $$(basename $$f) == "Image" ]]; then
                 IMAGE_FILE=$$f
                 break
@@ -441,20 +480,18 @@ genrule(
     """,
 )
 
-# Create DTBO image from compiled overlays
 dtbo(
     name = "yukawa_dtbo",
-    kernel_build = "//common:yukawa",
+    kernel_build = ":yukawa_vim3",
     srcs = [
         "//yukawa-device/arch/arm64/boot/dts:dtbo_amlogic",
     ],
 )
 
-
 vendor_dlkm_image(
     name = "yukawa_vendor_dlkm_image",
     build_flatten = True,
-    kernel_modules_install = "//common:yukawa_modules_install",
+    kernel_modules_install = ":yukawa_vim3_modules_install",
     modules_list = ":yukawa_vendor_dlkm_modules_list",
     deps = [":yukawa_file_contexts"],
 )
@@ -471,7 +508,7 @@ system_dlkm_image(
     base = "//common:kernel_aarch64_system_dlkm_image",
     build_flatten = True,
     fs_types = ["ext4"],
-    kernel_modules_install = "//common:yukawa_modules_install",
+    kernel_modules_install = ":yukawa_vim3_modules_install",
     modules_blocklist = None,
     modules_list = ":yukawa_system_dlkm_modules_list",
     deps = [":yukawa_system_file_contexts"],
@@ -502,15 +539,13 @@ pkg_files(
     strip_prefix = strip_prefix.files_only(),
 )
 
-# Flatten all kernel modules for system_dlkm from yukawa_modules_install
 genrule(
     name = "yukawa_system_dlkm_modules_flattened",
-    srcs = [":yukawa_modules_install"],
+    srcs = [":yukawa_vim3_modules_install"],
     outs = ["system_dlkm_modules_flattened.tar"],
     cmd = """
         mkdir -p $(@D)/system_dlkm_flat
-        # Find all .ko files in yukawa_modules_install and copy them flatten
-        modules_dir=$$(dirname $(location :yukawa_modules_install))/staging/lib/modules
+        modules_dir=$$(dirname $(location :yukawa_vim3_modules_install))/staging/lib/modules
         if [ -d $$modules_dir ]; then
             find $$modules_dir -name "*.ko" -exec cp {} $(@D)/system_dlkm_flat/ \\; 2>/dev/null || true
             echo "Modules copied: $$(ls $(@D)/system_dlkm_flat/*.ko 2>/dev/null | wc -l)"
@@ -521,37 +556,28 @@ genrule(
 
 pkg_files(
     name = "yukawa_system_dlkm_modules_pkg_files",
-    srcs = select({
-        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
-        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_COMMON_GKI_MODULES],
-    }),
+    srcs = [":yukawa_vim3/" + m for m in YUKAWA_COMMON_GKI_MODULES],
     prefix = "system_dlkm/",
     strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_vendor_dlkm_modules_pkg_files",
-    srcs = select({
-        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
-        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
-    }),
+    srcs = [":yukawa_vim3/" + m for m in YUKAWA_VENDOR_DLKM_MODULES],
     prefix = "vendor_dlkm/",
     strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_modules_pkg_files",
-    srcs = ["//common:yukawa_modules_install"],
+    srcs = [":yukawa_vim3_modules_install"],
     prefix = "modules",
     strip_prefix = strip_prefix.files_only(),
 )
 
 pkg_files(
     name = "yukawa_vendor_boot_modules_pkg_files",
-    srcs = select({
-        "//build/kernel/kleaf:kgdb_is_true": ["//common:yukawa_with_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
-        "//conditions:default": ["//common:yukawa_no_kgdb/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
-    }),
+    srcs = [":yukawa_vim3/" + m for m in YUKAWA_VENDOR_BOOT_MODULES],
     prefix = "ramdisk",
     strip_prefix = strip_prefix.files_only(),
 )
@@ -570,13 +596,11 @@ pkg_files(
     strip_prefix = strip_prefix.files_only(),
 )
 
-# Extract DTB files from yukawa kernel build outputs
 genrule(
     name = "yukawa_dtbs_genrule",
-    srcs = ["//common:yukawa"],
+    srcs = [":yukawa_vim3"],
     outs = YUKAWA_DTBS,
     cmd = """
-        # Copy DTB files from yukawa build outputs
         for src in $(SRCS); do
             case "$$src" in
                 *meson-g12b-a311d-khadas-vim3.dtb)
