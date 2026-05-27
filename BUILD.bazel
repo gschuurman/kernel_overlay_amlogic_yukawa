@@ -56,6 +56,11 @@ load(
 YUKAWA_COMMON_GKI_MODULES = [
     m
     for m in get_gki_modules_list("arm64")
+    # pstore_blk/pstore_zone need filp_open which is on the GKI ABI denylist
+    if m not in [
+        "fs/pstore/pstore_blk.ko",
+        "fs/pstore/pstore_zone.ko",
+    ]
 ]
 
 YUKAWA_IN_TREE_MODULES = [

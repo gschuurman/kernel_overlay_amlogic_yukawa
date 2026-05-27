@@ -2,3 +2,7 @@ CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
 CONFIG_KEYBOARD_GPIO_POLLED=m
 CONFIG_KEYBOARD_ADC=m
+# pstore_blk/pstore_zone require filp_open which is on the GKI ABI denylist;
+# disable the block-device backend (base pstore via RAM/ftrace still works)
+CONFIG_PSTORE_BLK=n
+CONFIG_PSTORE_ZONE=n

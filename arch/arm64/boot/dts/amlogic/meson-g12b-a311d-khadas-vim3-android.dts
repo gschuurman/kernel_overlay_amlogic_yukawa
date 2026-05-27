@@ -2,8 +2,10 @@
 /*
  * Copyright (c) 2019 BayLibre SAS. All rights reserved.
  */
+
 /dts-v1/;
 /plugin/;
+
 #include <dt-bindings/phy/phy.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/meson-g12a-gpio.h>
@@ -11,63 +13,43 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-    compatible = "khadas,vim3", "amlogic,a311d", "amlogic,g12b";
-    model = "Khadas VIM3";
-
-    fragment@101 {
+  compatible = "khadas,vim3", "amlogic,a311d", "amlogic,g12b";
+  model = "Khadas VIM3";
+  fragment@101 {
         target-path = "/";
         __overlay__ {
-            reserved-memory {
-                #address-cells = <2>;
-                #size-cells = <2>;
-                ramoops@d000000 {
-                    compatible = "ramoops";
-                    reg = <0x0 0x0d000000 0x0 0x00100000>;
-                    record-size = <0x8000>;
-                    console-size = <0x8000>;
-                    ftrace-size = <0x0>;
-                    pmsg-size = <0x8000>;
+                reserved-memory {
+                        #address-cells = <2>;
+                        #size-cells = <2>;
+                        ramoops@d000000 {
+                                compatible = "ramoops";
+                                reg = <0x0 0x0d000000 0x0 0x00100000>;
+                                record-size = <0x8000>;
+                                console-size = <0x8000>;
+                                ftrace-size = <0x0>;
+                                pmsg-size = <0x8000>;
+                        };
                 };
-            };
-        };
-    };
 
-    fragment@102 {
-        target = <&vcc_5v>;
-        __overlay__ {
-            gpio-open-drain;
         };
-    };
+  };
+};
 
-    fragment@103 {
-        target = <&uart_C>;
-        __overlay__ {
-            status = "okay";
-            pinctrl-0 = <&uart_c_pins>;
-            pinctrl-names = "default";
-        };
-    };
+&vcc_5v {
+	gpio-open-drain;
+};
 
-    fragment@104 {
-        target = <&emmc_pwrseq>;
-        __overlay__ {
-            status = "okay";
-        };
-    };
+&uart_C {
+        status = "okay";
+        pinctrl-0 = <&uart_c_pins>;
+        pinctrl-names = "default";
+};
 
-    fragment@105 {
-        target = <&sd_emmc_a>;
-        __overlay__ {
-            keep-power-in-suspend;
-        };
-    };
+&emmc_pwrseq{
+	status = "okay";
+};
 
-    fragment@106 {
-        target = <&pwm_ef>;
-        __overlay__ {
-            status = "okay";
-            pinctrl-0 = <&pwm_e_pins &pwm_f_h_pins>;
-            pinctrl-names = "default";
-        };
-    };
+&sd_emmc_a {
+     /* WiFi firmware requires power to be kept while in suspend */
+    keep-power-in-suspend;
 };
