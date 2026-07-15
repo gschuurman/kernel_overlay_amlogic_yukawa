@@ -6,3 +6,10 @@ CONFIG_KEYBOARD_ADC=m
 # disable the block-device backend (base pstore via RAM/ftrace still works)
 CONFIG_PSTORE_BLK=n
 CONFIG_PSTORE_ZONE=n
+# ALSA loopback: built in (not =m) so the "Loopback" card is always present.
+# Backs the native radio audio path — the RTL-SDR HAL writes decoded PCM to the
+# loopback playback side, exposed to the audio HAL as DEVICE_IN_FM_TUNER.
+# SND_ALOOP lives under the SND_DRIVERS submenu, which gki_defconfig disables
+# (# CONFIG_SND_DRIVERS is not set) — must enable it or SND_ALOOP is dropped.
+CONFIG_SND_DRIVERS=y
+CONFIG_SND_ALOOP=y
