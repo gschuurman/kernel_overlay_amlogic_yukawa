@@ -10,7 +10,11 @@ CONFIG_PSTORE_ZONE=n
 # Backs the native radio audio path — the RTL-SDR HAL writes decoded PCM to the
 # loopback playback side, exposed to the audio HAL as DEVICE_IN_FM_TUNER.
 # SND_ALOOP lives under the SND_DRIVERS submenu, which gki_defconfig disables
-# (# CONFIG_SND_DRIVERS is not set) — must enable it or SND_ALOOP is dropped.
+# by default -- must enable it or SND_ALOOP is dropped. (Note for future
+# edits: avoid spelling out this file's own CONFIG_ symbol names verbatim in
+# nearby comments -- merge_config.sh's `grep -w` symbol matching isn't
+# comment-aware and will pick up the literal text, producing a garbled
+# "New value" warning during the merge.)
 CONFIG_SND_DRIVERS=y
 CONFIG_SND_ALOOP=y
 
@@ -31,21 +35,22 @@ CONFIG_MAC80211=m
 CONFIG_BT_HCIUART=m
 CONFIG_BT_HCIUART_BCM=y
 
+CONFIG_CFG80211=m
+CONFIG_BRCMFMAC=m
+CONFIG_BRCMFMAC_SDIO=y
+CONFIG_BRCMFMAC_USB=y
+CONFIG_BRCMUTIL=m
+
 # brcmfmac splits per-vendor "fwvid" code into a separate module
 # (brcmfmac-wcc.ko for this board's BCM4359) that it loads via the kernel's
 # request_module() at probe time rather than a static dependency. Android has
 # no /lib/modules, so the default CONFIG_MODPROBE_PATH (toolbox's modprobe)
 # always fails that call with -2 and brcmf_attach aborts before wlan0 ever
-# appears -- and preloading brcmfmac-wcc.ko via modules.load doesn't help
-# either, since brcmfmac's SDIO probe fires synchronously as part of its own
-# insmod, before the next line in modules.load can run. We're not chasing GKI
-# VTS compliance on this device, so sidestep the whole module-autoload
-# problem: build brcmfmac in (=y), which compiles wcc/core.o straight into
-# the kernel per its Makefile's non-module branch, no request_module() ever
-# involved. CFG80211 must also be =y since a bool can't depend on a tristate
-# module; BRCMUTIL follows via BRCMFMAC's own `select`.
-CONFIG_CFG80211=y
-CONFIG_BRCMFMAC=y
-CONFIG_BRCMFMAC_SDIO=y
-CONFIG_BRCMFMAC_USB=y
-CONFIG_BRCMUTIL=y
+# appears. We tried building brcmfmac in (=y) to sidestep this entirely, but
+# that override mysteriously wouldn't stick through a real build regardless
+# of where in the merge chain it was placed (fragment override, then patched
+# directly into gki_defconfig) -- reverted, not worth chasing further tonight.
+# Staying modular and fixing the actual gap instead: modprobe_vim3 (device
+# tree) is a thin wrapper that points modprobe at /vendor_dlkm and
+# /system_dlkm, verified working on-device.
+CONFIG_MODPROBE_PATH="/system/bin/modprobe_vim3"
