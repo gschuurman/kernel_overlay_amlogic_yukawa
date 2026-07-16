@@ -27,11 +27,25 @@ CONFIG_DMABUF_HEAPS_CMA=m
 # Kept here instead of in amlogic_gki.fragment so the weekly automated GKI
 # rebase can't silently drop them again.
 CONFIG_DRM_PANFROST=m
-CONFIG_CFG80211=m
 CONFIG_MAC80211=m
-CONFIG_BRCMFMAC=m
-CONFIG_BRCMFMAC_SDIO=y
-CONFIG_BRCMFMAC_USB=y
-CONFIG_BRCMUTIL=m
 CONFIG_BT_HCIUART=m
 CONFIG_BT_HCIUART_BCM=y
+
+# brcmfmac splits per-vendor "fwvid" code into a separate module
+# (brcmfmac-wcc.ko for this board's BCM4359) that it loads via the kernel's
+# request_module() at probe time rather than a static dependency. Android has
+# no /lib/modules, so the default CONFIG_MODPROBE_PATH (toolbox's modprobe)
+# always fails that call with -2 and brcmf_attach aborts before wlan0 ever
+# appears -- and preloading brcmfmac-wcc.ko via modules.load doesn't help
+# either, since brcmfmac's SDIO probe fires synchronously as part of its own
+# insmod, before the next line in modules.load can run. We're not chasing GKI
+# VTS compliance on this device, so sidestep the whole module-autoload
+# problem: build brcmfmac in (=y), which compiles wcc/core.o straight into
+# the kernel per its Makefile's non-module branch, no request_module() ever
+# involved. CFG80211 must also be =y since a bool can't depend on a tristate
+# module; BRCMUTIL follows via BRCMFMAC's own `select`.
+CONFIG_CFG80211=y
+CONFIG_BRCMFMAC=y
+CONFIG_BRCMFMAC_SDIO=y
+CONFIG_BRCMFMAC_USB=y
+CONFIG_BRCMUTIL=y
