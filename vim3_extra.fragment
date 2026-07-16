@@ -13,3 +13,25 @@ CONFIG_PSTORE_ZONE=n
 # (# CONFIG_SND_DRIVERS is not set) — must enable it or SND_ALOOP is dropped.
 CONFIG_SND_DRIVERS=y
 CONFIG_SND_ALOOP=y
+
+# gki_defconfig enables the DMA-BUF heaps framework (DMABUF_HEAPS=y) but leaves
+# both concrete heaps unset; Android's graphics allocator (gralloc) needs
+# system_heap, and DMA_CMA is already on so cma_heap is available too.
+CONFIG_DMABUF_HEAPS_SYSTEM=m
+CONFIG_DMABUF_HEAPS_CMA=m
+
+# The 2026-07 GKI rebase rewrote amlogic_gki.fragment and silently dropped the
+# Mali GPU driver and the BCM4359 WiFi/BT stack (neither is in gki_defconfig
+# either). No DRM_PANFROST means no display driver at all — black screen, no
+# boot animation, ever — which is what caused the post-rebase boot failure.
+# Kept here instead of in amlogic_gki.fragment so the weekly automated GKI
+# rebase can't silently drop them again.
+CONFIG_DRM_PANFROST=m
+CONFIG_CFG80211=m
+CONFIG_MAC80211=m
+CONFIG_BRCMFMAC=m
+CONFIG_BRCMFMAC_SDIO=y
+CONFIG_BRCMFMAC_USB=y
+CONFIG_BRCMUTIL=m
+CONFIG_BT_HCIUART=m
+CONFIG_BT_HCIUART_BCM=y
