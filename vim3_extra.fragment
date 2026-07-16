@@ -35,6 +35,11 @@ CONFIG_MAC80211=m
 CONFIG_BT_HCIUART=m
 CONFIG_BT_HCIUART_BCM=y
 
+# Amlogic GXL hardware crypto accelerator -- also dropped by the rebase.
+# Performance-only (dm-verity/fscrypt fall back to software crypto without
+# it), not a correctness bug, but the original fragment had it too.
+CONFIG_CRYPTO_DEV_AMLOGIC_GXL=m
+
 CONFIG_CFG80211=m
 CONFIG_BRCMFMAC=m
 CONFIG_BRCMFMAC_SDIO=y
