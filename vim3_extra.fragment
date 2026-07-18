@@ -6,36 +6,8 @@ CONFIG_KEYBOARD_ADC=m
 # disable the block-device backend (base pstore via RAM/ftrace still works)
 CONFIG_PSTORE_BLK=n
 CONFIG_PSTORE_ZONE=n
-# ALSA loopback: built in (not =m) so the "Loopback" card is always present.
-# Backs the native radio audio path — the RTL-SDR HAL writes decoded PCM to the
-# loopback playback side, exposed to the audio HAL as DEVICE_IN_FM_TUNER.
-# SND_ALOOP lives under the SND_DRIVERS submenu, which gki_defconfig disables
-# by default -- must enable it or SND_ALOOP is dropped. (Note for future
-# edits: avoid spelling out this file's own CONFIG_ symbol names verbatim in
-# nearby comments -- merge_config.sh's `grep -w` symbol matching isn't
-# comment-aware and will pick up the literal text, producing a garbled
-# "New value" warning during the merge.)
+# SND_ALOOP backs the native radio audio path (RTL-SDR HAL -> loopback ->
+# DEVICE_IN_FM_TUNER). Built in, not =m, so the card is always present.
+# Lives under SND_DRIVERS, which gki_defconfig disables by default.
 CONFIG_SND_DRIVERS=y
 CONFIG_SND_ALOOP=y
-
-# NOTE: DRM_PANFROST, the BCM4359 WiFi/BT stack (CFG80211/BRCMFMAC/MAC80211/
-# BT_HCIUART), CRYPTO_DEV_AMLOGIC_GXL, and DMABUF_HEAPS_SYSTEM/CMA used to be
-# duplicated here because the 2026-07 GKI rebase silently dropped them from
-# amlogic_gki.fragment (that's what caused the post-rebase black-screen boot
-# failure). amlogic_gki.fragment has since been restored to match the
-# pre-rebase baseline (see backup-pre-gki-6.12.89), so those overrides moved
-# back there and were removed from here to avoid drift between two copies of
-# the same settings. If a future rebase drops them again, restore from that
-# same backup branch rather than re-patching piecemeal.
-
-# WiFi (brcmfmac) used to need a CONFIG_MODPROBE_PATH/
-# CONFIG_STATIC_USERMODEHELPER_PATH wrapper here (modprobe_vim3, device
-# tree) to work around request_module() always failing on Android (no
-# /lib/modules). Not needed anymore: the real fix was restoring this
-# fork's patch to brcmfmac/Makefile and fwvid.c, which statically links
-# the wcc/cyw/bca per-vendor "fwvid" code directly into brcmfmac.ko
-# instead of splitting it into a separately request_module()-loaded
-# brcmfmac-wcc.ko (see backup-pre-gki-6.12.89). Removed the wrapper along
-# with its now-unused Kconfig hooks -- nothing on this board currently
-# calls request_module() at all. If some future driver needs it, restore
-# from git history rather than re-adding it speculatively.
