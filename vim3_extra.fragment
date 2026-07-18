@@ -28,25 +28,14 @@ CONFIG_SND_ALOOP=y
 # the same settings. If a future rebase drops them again, restore from that
 # same backup branch rather than re-patching piecemeal.
 
-# NOT actually needed for brcmfmac anymore -- the real fix for that was in
-# the kernel source itself: brcmfmac/Makefile and fwvid.c on this fork are
-# patched (see backup-pre-gki-6.12.89) to statically link the wcc/cyw/bca
-# per-vendor "fwvid" code directly into brcmfmac.ko instead of splitting it
-# into a separately-loaded brcmfmac-wcc.ko pulled in via the kernel's
-# request_module() at probe time. The GKI rebase silently reverted both
-# files to plain upstream behavior (separate module, real request_module()
-# call), which is what actually caused tonight's WiFi failure -- not
-# anything fixable from Kconfig. Both files have been restored.
-#
-# Kept anyway as a general-purpose safety net: Android has no /lib/modules,
-# so the default CONFIG_MODPROBE_PATH (toolbox's modprobe) fails any
-# kernel-triggered request_module() call with -2, and separately,
-# gki_defconfig's CONFIG_STATIC_USERMODEHELPER=y with an empty path makes
-# the kernel ignore CONFIG_MODPROBE_PATH entirely in favor of this one fixed
-# binary for every call_usermodehelper() call. modprobe_vim3 (device tree)
-# is a thin wrapper that points modprobe at /vendor_dlkm and /system_dlkm;
-# pointing both knobs at it means any *other* driver that ever relies on
-# runtime module autoload on this board won't hit the same multi-night dead
-# end brcmfmac's did.
-CONFIG_MODPROBE_PATH="/system/bin/modprobe_vim3"
-CONFIG_STATIC_USERMODEHELPER_PATH="/system/bin/modprobe_vim3"
+# WiFi (brcmfmac) used to need a CONFIG_MODPROBE_PATH/
+# CONFIG_STATIC_USERMODEHELPER_PATH wrapper here (modprobe_vim3, device
+# tree) to work around request_module() always failing on Android (no
+# /lib/modules). Not needed anymore: the real fix was restoring this
+# fork's patch to brcmfmac/Makefile and fwvid.c, which statically links
+# the wcc/cyw/bca per-vendor "fwvid" code directly into brcmfmac.ko
+# instead of splitting it into a separately request_module()-loaded
+# brcmfmac-wcc.ko (see backup-pre-gki-6.12.89). Removed the wrapper along
+# with its now-unused Kconfig hooks -- nothing on this board currently
+# calls request_module() at all. If some future driver needs it, restore
+# from git history rather than re-adding it speculatively.
