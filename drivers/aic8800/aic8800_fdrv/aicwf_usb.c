@@ -1735,7 +1735,7 @@ static int aicwf_usb_bus_txdata(struct device *dev, struct sk_buff *skb)
     u16 index = 0;
     bool need_cfm = false;
 #ifdef CONFIG_USB_ALIGN_DATA//AIDEN
-    u8 *buf_align;
+    u8 *buf_align = NULL;
     int align;
 #endif
 
@@ -1846,6 +1846,11 @@ static int aicwf_usb_bus_txdata(struct device *dev, struct sk_buff *skb)
             align = ((unsigned long)(usb_buf->usb_align_data)) & (align_param - 1);
             buf_align = usb_buf->usb_align_data + (align_param - align);
             memcpy(buf_align, buf, buf_len);
+        } else {
+            /* Allocation failed -- fall back to the original (possibly
+             * misaligned) buffer rather than handing usb_fill_bulk_urb an
+             * uninitialized pointer. */
+            buf_align = buf;
         }
     } else {
         buf_align = buf;
