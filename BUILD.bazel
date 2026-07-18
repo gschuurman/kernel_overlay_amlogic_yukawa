@@ -254,8 +254,6 @@ YUKAWA_VENDOR_BOOT_MODULES = [
 ]
 
 YUKAWA_VENDOR_DLKM_MODULES = [
-    "aic8800_fdrv.ko",
-    "aic_load_fw.ko",
     "amlogic-gxl-crypto.ko",
     "ao-cec-g12a.ko",
     "ao-cec.ko",
@@ -387,10 +385,6 @@ kernel_build(
 kernel_modules_install(
     name = "yukawa_vim3_modules_install",
     kernel_build = ":yukawa_vim3",
-    kernel_modules = [
-        "//kernel/khadas/vim3_overlay/drivers/aic8800:aic8800_fdrv",
-        "//kernel/khadas/vim3_overlay/drivers/aic8800:aic_load_fw",
-    ],
     visibility = ["//visibility:public"],
 )
 
