@@ -1,0 +1,138 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Out-of-tree driver for the AIC8800D80 USB WiFi6 chipset (the Ugreen dongle,
+# enumerates a69c:5723 -> a69c:8d80 after mode-switch). No mainline driver
+# exists; source vendored from https://github.com/shenmintao/aic8800d80
+# (main branch, WiFi only -- BT stays on the onboard BCM4359).
+#
+# FIRST-PASS PORT, NOT YET BUILD-VERIFIED. The upstream driver ships a
+# standalone Kbuild Makefile (obj-y lists + ccflags-$(CONFIG_X) toggles) meant
+# to run outside the GKI/kleaf DDK build. srcs/local_defines below were
+# hand-derived from that Makefile's *default* CONFIG_* values (see
+# aic8800_fdrv/Makefile and aic_load_fw/Makefile in the upstream repo for the
+# authoritative source of truth if something doesn't compile/link).
+#
+# Deliberate deviation from upstream defaults: CONFIG_USE_FW_REQUEST is forced
+# on here (upstream default is off). Off means firmware is loaded via a raw
+# filp_open() on a hardcoded path -- filp_open is not on the GKI KMI symbol
+# allowlist (same restriction that blocked CONFIG_PSTORE_BLK in
+# vim3_extra.fragment), so it won't link against this kernel. On uses the
+# standard request_firmware() API instead, resolved against
+# firmware_class.path=/vendor/firmware (already set on this device's kernel
+# cmdline) -- the same mechanism brcmfmac's firmware load already uses
+# successfully here.
+
+load("//build/kernel/kleaf:kernel.bzl", "ddk_module")
+
+_COMMON_DEFINES = [
+    "ANDROID_PLATFORM",
+    "CONFIG_USE_FW_REQUEST",
+    "CONFIG_PREALLOC_RX_SKB",
+    "CONFIG_PREALLOC_TXQ",
+    "CONFIG_RFTEST",
+    "CONFIG_USB_BT",
+]
+
+ddk_module(
+    name = "aic8800_fdrv",
+    srcs = [
+        "aic8800_fdrv/aic_priv_cmd.c",
+        "aic8800_fdrv/aic_vendor.c",
+        "aic8800_fdrv/aicwf_compat_8800d80.c",
+        "aic8800_fdrv/aicwf_compat_8800d80n.c",
+        "aic8800_fdrv/aicwf_compat_8800d80x2.c",
+        "aic8800_fdrv/aicwf_compat_8800dc.c",
+        "aic8800_fdrv/aicwf_compat_8800dln.c",
+        "aic8800_fdrv/aicwf_tcp_ack.c",
+        "aic8800_fdrv/aicwf_txrxif.c",
+        "aic8800_fdrv/aicwf_usb.c",
+        "aic8800_fdrv/aicwf_wext_linux.c",
+        "aic8800_fdrv/ipc_host.c",
+        "aic8800_fdrv/md5.c",
+        "aic8800_fdrv/regdb.c",
+        "aic8800_fdrv/rwnx_cfgfile.c",
+        "aic8800_fdrv/rwnx_cmds.c",
+        "aic8800_fdrv/rwnx_dini.c",
+        "aic8800_fdrv/rwnx_irqs.c",
+        "aic8800_fdrv/rwnx_main.c",
+        "aic8800_fdrv/rwnx_mesh.c",
+        "aic8800_fdrv/rwnx_mod_params.c",
+        "aic8800_fdrv/rwnx_msg_rx.c",
+        "aic8800_fdrv/rwnx_msg_tx.c",
+        "aic8800_fdrv/rwnx_pci.c",
+        "aic8800_fdrv/rwnx_platform.c",
+        "aic8800_fdrv/rwnx_radar.c",
+        "aic8800_fdrv/rwnx_rx.c",
+        "aic8800_fdrv/rwnx_strs.c",
+        "aic8800_fdrv/rwnx_tdls.c",
+        "aic8800_fdrv/rwnx_tx.c",
+        "aic8800_fdrv/rwnx_txq.c",
+        "aic8800_fdrv/rwnx_utils.c",
+        "aic8800_fdrv/rwnx_v7.c",
+        "aic8800_fdrv/rwnx_wakelock.c",
+        "aic8800_fdrv/usb_host.c",
+    ] + glob(["aic8800_fdrv/*.h"]),
+    out = "aic8800_fdrv.ko",
+    kernel_build = "//kernel/khadas/vim3_overlay:yukawa_vim3",
+    local_defines = _COMMON_DEFINES + [
+        "NX_VIRT_DEV_MAX=4",
+        "NX_REMOTE_STA_MAX_FOR_OLD_IC=8",
+        "NX_REMOTE_STA_MAX=32",
+        "NX_MU_GROUP_MAX=62",
+        "NX_TXDESC_CNT=64",
+        "NX_TX_MAX_RATES=4",
+        "NX_CHAN_CTXT_CNT=3",
+        "CONFIG_RWNX_FULLMAC",
+        "CONFIG_USER_MAX=1",
+        "NX_TXQ_CNT=5",
+        'DEFAULT_COUNTRY_CODE=\\"00\\"',
+        "AICWF_USB_SUPPORT",
+        "CONFIG_START_FROM_BOOTROM",
+        "CONFIG_VRF_DCDC_MODE",
+        "CONFIG_ROM_PATCH_EN",
+        "CONFIG_RWNX_P2P_DEBUGFS",
+        "CONFIG_COEX",
+        "CONFIG_RWNX_RADAR",
+        "CONFIG_RWNX_DBG",
+        "AICWF_RX_REORDER",
+        "AICWF_ARP_OFFLOAD",
+        "USE_5G",
+        "CONFIG_MAC_RANDOM_IF_NO_MAC_IN_EFUSE",
+        "CONFIG_ALIGN_8BYTES",
+        "CONFIG_TXRX_THREAD_PRIO",
+        "CONFIG_USB_ALIGN_DATA",
+        "CONFIG_RX_NETIF_RECV_SKB",
+        "CONFIG_USB_MSG_OUT_EP",
+        "CONFIG_USB_MSG_IN_EP",
+        "CONFIG_SUPPORT_REALTIME_CHANGE_MAC",
+        "CONFIG_USE_USB_ZERO_PACKET",
+        "CONFIG_STA_SCAN_WHEN_P2P_WORKING",
+        "CONFIG_DPD",
+        "CONFIG_FORCE_DPD_CALIB",
+        "CONFIG_MCC",
+        'CONFIG_AIC_FW_PATH=\\"/vendor/firmware\\"',
+    ],
+)
+
+ddk_module(
+    name = "aic_load_fw",
+    srcs = [
+        "aic_load_fw/aic_bluetooth_main.c",
+        "aic_load_fw/aic_compat_8800d80.c",
+        "aic_load_fw/aic_compat_8800d80x2.c",
+        "aic_load_fw/aic_txrxif.c",
+        "aic_load_fw/aicbluetooth.c",
+        "aic_load_fw/aicbluetooth_cmds.c",
+        "aic_load_fw/aicwf_txq_prealloc.c",
+        "aic_load_fw/aicwf_usb.c",
+        "aic_load_fw/md5.c",
+    ] + glob(["aic_load_fw/*.h"]),
+    out = "aic_load_fw.ko",
+    kernel_build = "//kernel/khadas/vim3_overlay:yukawa_vim3",
+    local_defines = _COMMON_DEFINES + [
+        "AICWF_USB_SUPPORT",
+        "CONFIG_USB_MSG_EP",
+        "CONFIG_LINK_DET_5G",
+        "CONFIG_PLATFORM_AMLOGIC",
+    ],
+)

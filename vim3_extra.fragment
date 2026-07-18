@@ -18,44 +18,35 @@ CONFIG_PSTORE_ZONE=n
 CONFIG_SND_DRIVERS=y
 CONFIG_SND_ALOOP=y
 
-# gki_defconfig enables the DMA-BUF heaps framework (DMABUF_HEAPS=y) but leaves
-# both concrete heaps unset; Android's graphics allocator (gralloc) needs
-# system_heap, and DMA_CMA is already on so cma_heap is available too.
-CONFIG_DMABUF_HEAPS_SYSTEM=m
-CONFIG_DMABUF_HEAPS_CMA=m
+# NOTE: DRM_PANFROST, the BCM4359 WiFi/BT stack (CFG80211/BRCMFMAC/MAC80211/
+# BT_HCIUART), CRYPTO_DEV_AMLOGIC_GXL, and DMABUF_HEAPS_SYSTEM/CMA used to be
+# duplicated here because the 2026-07 GKI rebase silently dropped them from
+# amlogic_gki.fragment (that's what caused the post-rebase black-screen boot
+# failure). amlogic_gki.fragment has since been restored to match the
+# pre-rebase baseline (see backup-pre-gki-6.12.89), so those overrides moved
+# back there and were removed from here to avoid drift between two copies of
+# the same settings. If a future rebase drops them again, restore from that
+# same backup branch rather than re-patching piecemeal.
 
-# The 2026-07 GKI rebase rewrote amlogic_gki.fragment and silently dropped the
-# Mali GPU driver and the BCM4359 WiFi/BT stack (neither is in gki_defconfig
-# either). No DRM_PANFROST means no display driver at all — black screen, no
-# boot animation, ever — which is what caused the post-rebase boot failure.
-# Kept here instead of in amlogic_gki.fragment so the weekly automated GKI
-# rebase can't silently drop them again.
-CONFIG_DRM_PANFROST=m
-CONFIG_MAC80211=m
-CONFIG_BT_HCIUART=m
-CONFIG_BT_HCIUART_BCM=y
-
-# Amlogic GXL hardware crypto accelerator -- also dropped by the rebase.
-# Performance-only (dm-verity/fscrypt fall back to software crypto without
-# it), not a correctness bug, but the original fragment had it too.
-CONFIG_CRYPTO_DEV_AMLOGIC_GXL=m
-
-CONFIG_CFG80211=m
-CONFIG_BRCMFMAC=m
-CONFIG_BRCMFMAC_SDIO=y
-CONFIG_BRCMFMAC_USB=y
-CONFIG_BRCMUTIL=m
-
-# brcmfmac splits per-vendor "fwvid" code into a separate module
-# (brcmfmac-wcc.ko for this board's BCM4359) that it loads via the kernel's
-# request_module() at probe time rather than a static dependency. Android has
-# no /lib/modules, so the default CONFIG_MODPROBE_PATH (toolbox's modprobe)
-# always fails that call with -2 and brcmf_attach aborts before wlan0 ever
-# appears. We tried building brcmfmac in (=y) to sidestep this entirely, but
-# that override mysteriously wouldn't stick through a real build regardless
-# of where in the merge chain it was placed (fragment override, then patched
-# directly into gki_defconfig) -- reverted, not worth chasing further tonight.
-# Staying modular and fixing the actual gap instead: modprobe_vim3 (device
-# tree) is a thin wrapper that points modprobe at /vendor_dlkm and
-# /system_dlkm, verified working on-device.
+# NOT actually needed for brcmfmac anymore -- the real fix for that was in
+# the kernel source itself: brcmfmac/Makefile and fwvid.c on this fork are
+# patched (see backup-pre-gki-6.12.89) to statically link the wcc/cyw/bca
+# per-vendor "fwvid" code directly into brcmfmac.ko instead of splitting it
+# into a separately-loaded brcmfmac-wcc.ko pulled in via the kernel's
+# request_module() at probe time. The GKI rebase silently reverted both
+# files to plain upstream behavior (separate module, real request_module()
+# call), which is what actually caused tonight's WiFi failure -- not
+# anything fixable from Kconfig. Both files have been restored.
+#
+# Kept anyway as a general-purpose safety net: Android has no /lib/modules,
+# so the default CONFIG_MODPROBE_PATH (toolbox's modprobe) fails any
+# kernel-triggered request_module() call with -2, and separately,
+# gki_defconfig's CONFIG_STATIC_USERMODEHELPER=y with an empty path makes
+# the kernel ignore CONFIG_MODPROBE_PATH entirely in favor of this one fixed
+# binary for every call_usermodehelper() call. modprobe_vim3 (device tree)
+# is a thin wrapper that points modprobe at /vendor_dlkm and /system_dlkm;
+# pointing both knobs at it means any *other* driver that ever relies on
+# runtime module autoload on this board won't hit the same multi-night dead
+# end brcmfmac's did.
 CONFIG_MODPROBE_PATH="/system/bin/modprobe_vim3"
+CONFIG_STATIC_USERMODEHELPER_PATH="/system/bin/modprobe_vim3"
