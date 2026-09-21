@@ -15,6 +15,7 @@
 / {
   compatible = "khadas,vim3", "amlogic,a311d", "amlogic,g12b";
   model = "Khadas VIM3";
+
   fragment@101 {
         target-path = "/";
         __overlay__ {
@@ -30,7 +31,20 @@
                                 pmsg-size = <0x8000>;
                         };
                 };
+        };
+  };
 
+  /*
+   * Tell the optee driver that OP-TEE (BL32, TZDRAM 0x05300000 + 12 MiB) is present via SMC.
+   * No reserved-memory node is needed: the base DT already reserves secmon@5300000 (32 MiB, no-map).
+   */
+  fragment@102 {
+        target-path = "/firmware";
+        __overlay__ {
+                optee {
+                        compatible = "linaro,optee-tz";
+                        method = "smc";
+                };
         };
   };
 };

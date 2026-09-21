@@ -11,3 +11,7 @@ CONFIG_PSTORE_ZONE=n
 # Lives under SND_DRIVERS, which gki_defconfig disables by default.
 CONFIG_SND_DRIVERS=y
 CONFIG_SND_ALOOP=y
+# OP-TEE (BL32 in the FIP) driver: exposes /dev/tee0 / teepriv0; needs the
+# /firmware/optee node + optee@5300000 no-map region from the DTBO overlay.
+CONFIG_TEE=y
+CONFIG_OPTEE=y
