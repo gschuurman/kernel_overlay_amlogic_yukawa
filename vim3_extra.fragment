@@ -15,3 +15,12 @@ CONFIG_SND_ALOOP=y
 # /firmware/optee node + optee@5300000 no-map region from the DTBO overlay.
 CONFIG_TEE=y
 CONFIG_OPTEE=y
+# Amlogic secure-monitor eFuse access (SM_EFUSE_READ/SM_GET_CHIP_ID SIP calls, via CONFIG_MESON_SM
+# which is already enabled elsewhere). arch/arm64/configs/defconfig sets this =m too, but that file
+# isn't actually part of this build's config merge -- CONFIG_NVMEM_MESON_EFUSE was silently absent
+# from the real .config despite its MESON_SM dependency being satisfied. Needed to validate the
+# efuse/chip-id SIP protocol from normal world before using it for OP-TEE's HUK.
+# Confirmed 2026-09-22 on hardware: /sys/bus/nvmem/devices/efuse0/nvmem probes and returns real,
+# non-zero efuse data via meson_sm_call() -- proves the SIP SM_EFUSE_READ/SM_GET_CHIP_ID path works
+# end-to-end from normal world on our custom TF-A before touching OP-TEE's HUK.
+CONFIG_NVMEM_MESON_EFUSE=y
