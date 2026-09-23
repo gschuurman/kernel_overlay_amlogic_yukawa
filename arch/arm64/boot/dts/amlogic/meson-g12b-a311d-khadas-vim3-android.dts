@@ -35,7 +35,7 @@
   };
 
   /*
-   * Tell the optee driver that OP-TEE (BL32, TZDRAM 0x05300000 + 12 MiB) is present via SMC.
+   * Tell the optee driver that OP-TEE (BL32, TZDRAM 0x05300000 + 32 MiB) is present via SMC.
    * No reserved-memory node is needed: the base DT already reserves secmon@5300000 (32 MiB, no-map).
    */
   fragment@102 {
