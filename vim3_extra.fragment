@@ -24,3 +24,6 @@ CONFIG_OPTEE=y
 # non-zero efuse data via meson_sm_call() -- proves the SIP SM_EFUSE_READ/SM_GET_CHIP_ID path works
 # end-to-end from normal world on our custom TF-A before touching OP-TEE's HUK.
 CONFIG_NVMEM_MESON_EFUSE=y
+# etnaviv drives the A311D's Vivante VIPNano-QI NPU (the npu node in meson-g12b-a311d-khadas-vim3.dts);
+# userspace is Mesa's Teflon TensorFlow Lite delegate. A render-only DRM device (/dev/dri/renderD129).
+CONFIG_DRM_ETNAVIV=m
